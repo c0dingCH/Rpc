@@ -51,8 +51,9 @@ void RpcProvider::Run() {
   RpcZkClient zk_client;
   zk_client.Start();
 
+  std::string root = "/rpc";
   for(auto &[serv_name, serv_info] : servs_){
-    std::string serv_path = "/" + serv_name;
+    std::string serv_path = root + "/" + serv_name;
     zk_client.Create(serv_path.c_str(), nullptr, 0);
 
     for(auto &[method_name, method] : serv_info.methods){

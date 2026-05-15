@@ -5,6 +5,7 @@
 #include"TimerQueue.h"
 #include"Timer.h"
 #include"TimeStamp.h"
+#include"Logging.h"
 
 #include<memory>
 #include<assert.h>
@@ -110,4 +111,34 @@ void EventLoop::RunAfter(double wait_time, const std::function<void()> & cb){
 
 void EventLoop::RunEvery(double interval , const std::function<void()> & cb){
   timer_queue_ -> AddTimer(TimeStamp::Now(), std::move(cb), interval);
+}
+
+uint64_t EventLoop::RoundId(){
+  while(contexts_.count(++id_));
+  return id_;
+}
+
+uint64_t EventLoop::SetContext(std::unique_ptr<Context> context){
+  auto id = RoundId();
+  contexts_[id] = std::move(context);
+  return id;
+}
+
+EventLoop::Context * EventLoop::GetContext(uint64_t id){
+  auto it = contexts_.find(id);
+  if(it == contexts_.end()){
+    LOG_ERROR << "no such reqeust_id : "<< id;
+    return nullptr;
+  }
+  return it->second.get();
+}
+
+void EventLoop::RemoveContext(uint64_t id){
+  auto it = contexts_.find(id);
+  if(it == contexts_.end()){
+    LOG_ERROR << "context id : " << id << " double remove";
+  }
+  else{
+    contexts_.erase(it);
+  }
 }

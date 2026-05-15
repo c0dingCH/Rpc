@@ -5,7 +5,7 @@
 #include"Common.h"
 #include"TimeStamp.h"
 #include"Logging.h"
-
+#include"RpcLoadState.h"
 
 #include<functional>
 #include<unistd.h>
@@ -16,6 +16,8 @@
 #include<sys/socket.h>
 #include<sys/ioctl.h>
 #include<sys/sendfile.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
 
 #define READ_BUFFER 1024
 
@@ -48,6 +50,9 @@ void TcpConnection::ConnectionEstablished(){
 
 void TcpConnection::ConnectionDestructor(){
   loop_->DeleteChannel(channel_.get());
+  if(on_connect_){
+    on_connect_(shared_from_this());
+  }
 }
 
 
@@ -230,6 +235,13 @@ int TcpConnection::GetId() const{
   return connid_;
 }
 
+std::string TcpConnection::GetAddr(){
+  sockaddr_in addr{};
+  socklen_t len = sizeof addr;
+  getpeername(connfd_, (sockaddr *)&addr, &len);
+  return std::string(inet_ntoa(addr.sin_addr)) + ":" + std::to_string(ntohs(addr.sin_port));
+}
+
 TimeStamp TcpConnection::GetTimeStamp(){
   return timestamp_;
 }
@@ -263,11 +275,5 @@ void TcpConnection::SetTimeStamp(TimeStamp timestamp){
   timestamp_ = timestamp;
 }
 
-void TcpConnection::SetUser(User* user){
-  user_ = user;
-}
 
-User* TcpConnection::GetUser() const{
-  return user_;
-}
 
