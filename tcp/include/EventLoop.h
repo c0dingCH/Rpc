@@ -63,5 +63,5 @@ private:
   std::unique_ptr<TimerQueue> timer_queue_;
   
   std::map<uint64_t, std::unique_ptr<Context> > contexts_;
-  uint64_t id_{0};
+  uint64_t context_id_{0};
 };

@@ -6,7 +6,7 @@
 int main(){
   test::LoginRequest request;
   request.set_name("cheng");
-  request.set_pwd("1234");
+  request.set_pwd("123");
   
   test::LoginResponse response;
   test::UserService_Stub stub(new RpcChannel());

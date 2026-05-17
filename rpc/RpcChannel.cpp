@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include <string>
 
-
 void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
                             google::protobuf::RpcController* controller,
                             const google::protobuf::Message* request,
@@ -24,10 +23,10 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
     return;
   }
 
-  protoheader::RpcHeader rpc_header;
-  rpc_header.set_serv_name(serv_name);
-  rpc_header.set_method_name(method_name);
-
+  protoheader::RequestHeader rpc_header;
+  rpc_header.set_service(serv_name);
+  rpc_header.set_method(method_name);
+  rpc_header.set_context_id(1);  // 为了内存对齐，让proxy 注入context_id 的时候高效操作
   std::string header_str;
   uint32_t header_size = 0;
   if (!rpc_header.SerializeToString(&header_str)) {
@@ -51,7 +50,7 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
   //固定的proxy地址，这里先表示为provider的地址
 
 
-  std::string ip = "127.0.0.11";
+  std::string ip = "127.0.0.10";
   short port = 8888;
   sockaddr_in addr{};
   addr.sin_family = AF_INET;
@@ -75,7 +74,20 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
     return;
   }
 
-  if (!response->ParseFromArray(recv_buf, recv_bytes)) {
+
+  int tot_size = 0, h_size = 0;
+  memcpy(&tot_size, recv_buf, 4);
+  memcpy(&h_size, recv_buf + 4, 4);
+
+  protoheader::ResponseHeader r_header;
+
+  if (!response->ParseFromArray(recv_buf + 8, h_size)) {
+    close(serv_fd);
+    LOG_ERROR << "parse response_header error";
+    return;
+  }
+
+  if (!response->ParseFromArray(recv_buf + 8 + h_size, tot_size - 8 - h_size)) {
     close(serv_fd);
     LOG_ERROR << "parse response error";
     return;

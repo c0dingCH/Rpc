@@ -2,13 +2,13 @@
 #include<map>
 #include<vector>
 #include<functional>
-#include"Common.h"
 #include<memory>
+#include"Common.h"
+#include"EventLoopThreadPool.h"
 class EventLoop;
 class Socket;
 class Acceptor;
 class TcpConnection;
-class EventLoopThreadPool;
 
 class TcpServer{
 public:
@@ -16,6 +16,7 @@ public:
   ~TcpServer();
   DISALLOW_COPY_AND_MOVE(TcpServer);
 
+  EventLoop * GetNextLoop(){ return event_loop_thread_pool_ -> GetNextLoop(); }
 
   void Start();
   void HandleNewConnection(int sockfd);

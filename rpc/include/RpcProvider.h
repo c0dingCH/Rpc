@@ -5,6 +5,7 @@
 #include<memory>
 
 #include "EventLoop.h"
+#include "Header.pb.h"
 
 class TcpConnection;
 
@@ -28,5 +29,7 @@ private:
   void OnConnect(const std::shared_ptr<TcpConnection> & conn);
   void OnMessage(const std::shared_ptr<TcpConnection> & conn);
 
-  void SendResponse(const std::shared_ptr<TcpConnection> & conn, google::protobuf::Message *);
+  void SendResponse(const std::shared_ptr<TcpConnection> &conn,
+                          google::protobuf::RpcController * controller,
+                          google::protobuf::Message * response);
 };

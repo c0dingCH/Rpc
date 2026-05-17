@@ -34,6 +34,7 @@ TcpConnection::TcpConnection(EventLoop * loop, int connfd ,int connid):loop_(loo
 }
 
 TcpConnection::~TcpConnection(){
+  puts("xi gou le");
   if(connfd_ != -1){
     close(connfd_);
     connfd_ = -1;
@@ -131,7 +132,7 @@ void TcpConnection::Send(const std::string & msg){ // Send 安全问题，在Run
     loop_ -> RunOneFunc(std::bind(&TcpConnection::SendInLoop, this, msg));    
   }
   else{
-    LOG_ERROR << "can't send for disconntetion";
+    LOG_ERROR << "can't send for disconnected conn";
   }
 }
 
@@ -145,7 +146,7 @@ void TcpConnection::SendInLoop(const std::string &msg){
     if(n < 0){
       n = 0;
       if(errno != EAGAIN && errno != EWOULDBLOCK){
-        LOG_ERROR << "systemp error";
+        LOG_ERROR << "system error";
         if(errno == EPIPE || errno == ECONNRESET){ //写入已经关闭了的连接，可能还有其他errno值
           fault_error_ = true;
         }
@@ -276,4 +277,38 @@ void TcpConnection::SetTimeStamp(TimeStamp timestamp){
 }
 
 
+void TcpConnection::SetRole(Role role){
+  role_ = role;
+  if(IsProvider()){
+    res_.emplace<ProviderRes>();
+    if(!load_state_)load_state_ = std::make_unique<RpcLoadState>();
+    else LOG_ERROR << "LoadState set before SetRole";
+  }
+}
 
+void TcpConnection::SetClientRes(EventLoop * loop, uint64_t context_id){
+  res_ = ClientRes{loop, context_id};
+}
+
+void TcpConnection::AddContextId(uint64_t context_id){
+  if(auto * pr = std::get_if<ProviderRes>(&res_)){
+    if(pr->context_ids.count(context_id)){
+      LOG_ERROR << " re_add reactor id : "<< context_id << " in conn";
+    }
+    else{
+      pr->context_ids.insert(context_id);
+    }
+  }
+}
+
+void TcpConnection::RemoveContextId(uint64_t context_id){
+  if(auto * pr = std::get_if<ProviderRes>(&res_)){
+    auto it = pr->context_ids.find(context_id);
+    if(it == pr->context_ids.end()){
+      LOG_ERROR << " re_remove reactor id : "<< context_id << " in conn";
+    }
+    else{
+      pr->context_ids.erase(it);
+    }
+  }
+}

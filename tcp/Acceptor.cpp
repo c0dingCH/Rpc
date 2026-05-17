@@ -1,6 +1,8 @@
 #include"Acceptor.h"
 #include"EventLoop.h"
 #include"Channel.h"
+#include"Logging.h"
+
 #include<functional>
 #include<iostream>
 #include<cstring>
@@ -9,6 +11,8 @@
 #include<arpa/inet.h>
 #include<assert.h>
 #include<unistd.h>
+
+
 Acceptor::Acceptor(EventLoop * loop, const char * ip, const short port):loop_(loop){
   Create(); 
   Bind(ip,port);
@@ -29,14 +33,12 @@ Acceptor::~Acceptor(){
   }
 }
 
-
 void Acceptor::Create(){
   assert(listenfd_ == -1);
   listenfd_ = socket(AF_INET,SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK,0);
   //CLOEXEC close fd when use exec()
   if(listenfd_ == -1)
-    std::cout<<"Failed to create socket"<<std::endl;
-
+    LOG_FATAL<<"Failed to create socket";
 }
 
 void Acceptor::Bind(const char * ip, const short port){
@@ -45,14 +47,14 @@ void Acceptor::Bind(const char * ip, const short port){
   addr.sin_addr.s_addr = inet_addr(ip);
   addr.sin_port = htons(port);
   if(::bind(listenfd_, (sockaddr *)&addr, sizeof addr) == -1){
-    std::cout<<"Failed to Bind: "<<ip<<" : "<< port<< std::endl;
+    LOG_FATAL<<"Failed to Bind: "<<ip<<" : "<< port;
   }
 }
 
 void Acceptor::Listen(){
   assert(listenfd_ != -1);
   if(::listen(listenfd_, SOMAXCONN) == -1)
-      std::cout<<"Failed to Listen "<<std::endl;
+      LOG_FATAL<<"Failed to Listen ";
 }
 
 
@@ -61,7 +63,7 @@ void Acceptor::AcceptConnection() const{
   socklen_t len = sizeof addr;
   int clnt_fd = accept4(listenfd_, (sockaddr *)&addr, &len, SOCK_NONBLOCK | SOCK_CLOEXEC);
   if(clnt_fd == -1){
-    std::cout<<"acceptor error"<<std::endl;
+    LOG_ERROR << "acceptor error";
   }
   new_connection_(clnt_fd); 
 }

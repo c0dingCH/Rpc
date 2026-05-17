@@ -45,35 +45,39 @@ struct TableStruct_Header_2eproto {
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_Header_2eproto;
 namespace protoheader {
-class RpcHeader;
-struct RpcHeaderDefaultTypeInternal;
-extern RpcHeaderDefaultTypeInternal _RpcHeader_default_instance_;
+class RequestHeader;
+struct RequestHeaderDefaultTypeInternal;
+extern RequestHeaderDefaultTypeInternal _RequestHeader_default_instance_;
+class ResponseHeader;
+struct ResponseHeaderDefaultTypeInternal;
+extern ResponseHeaderDefaultTypeInternal _ResponseHeader_default_instance_;
 }  // namespace protoheader
 PROTOBUF_NAMESPACE_OPEN
-template<> ::protoheader::RpcHeader* Arena::CreateMaybeMessage<::protoheader::RpcHeader>(Arena*);
+template<> ::protoheader::RequestHeader* Arena::CreateMaybeMessage<::protoheader::RequestHeader>(Arena*);
+template<> ::protoheader::ResponseHeader* Arena::CreateMaybeMessage<::protoheader::ResponseHeader>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace protoheader {
 
 // ===================================================================
 
-class RpcHeader final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:protoheader.RpcHeader) */ {
+class RequestHeader final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:protoheader.RequestHeader) */ {
  public:
-  inline RpcHeader() : RpcHeader(nullptr) {}
-  ~RpcHeader() override;
-  explicit PROTOBUF_CONSTEXPR RpcHeader(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+  inline RequestHeader() : RequestHeader(nullptr) {}
+  ~RequestHeader() override;
+  explicit PROTOBUF_CONSTEXPR RequestHeader(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
 
-  RpcHeader(const RpcHeader& from);
-  RpcHeader(RpcHeader&& from) noexcept
-    : RpcHeader() {
+  RequestHeader(const RequestHeader& from);
+  RequestHeader(RequestHeader&& from) noexcept
+    : RequestHeader() {
     *this = ::std::move(from);
   }
 
-  inline RpcHeader& operator=(const RpcHeader& from) {
+  inline RequestHeader& operator=(const RequestHeader& from) {
     CopyFrom(from);
     return *this;
   }
-  inline RpcHeader& operator=(RpcHeader&& from) noexcept {
+  inline RequestHeader& operator=(RequestHeader&& from) noexcept {
     if (this == &from) return *this;
     if (GetOwningArena() == from.GetOwningArena()
   #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -96,20 +100,20 @@ class RpcHeader final :
   static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const RpcHeader& default_instance() {
+  static const RequestHeader& default_instance() {
     return *internal_default_instance();
   }
-  static inline const RpcHeader* internal_default_instance() {
-    return reinterpret_cast<const RpcHeader*>(
-               &_RpcHeader_default_instance_);
+  static inline const RequestHeader* internal_default_instance() {
+    return reinterpret_cast<const RequestHeader*>(
+               &_RequestHeader_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
     0;
 
-  friend void swap(RpcHeader& a, RpcHeader& b) {
+  friend void swap(RequestHeader& a, RequestHeader& b) {
     a.Swap(&b);
   }
-  inline void Swap(RpcHeader* other) {
+  inline void Swap(RequestHeader* other) {
     if (other == this) return;
   #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetOwningArena() != nullptr &&
@@ -122,7 +126,7 @@ class RpcHeader final :
       ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(RpcHeader* other) {
+  void UnsafeArenaSwap(RequestHeader* other) {
     if (other == this) return;
     GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
     InternalSwap(other);
@@ -130,14 +134,14 @@ class RpcHeader final :
 
   // implements Message ----------------------------------------------
 
-  RpcHeader* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
-    return CreateMaybeMessage<RpcHeader>(arena);
+  RequestHeader* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<RequestHeader>(arena);
   }
   using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
-  void CopyFrom(const RpcHeader& from);
+  void CopyFrom(const RequestHeader& from);
   using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom( const RpcHeader& from) {
-    RpcHeader::MergeImpl(*this, from);
+  void MergeFrom( const RequestHeader& from) {
+    RequestHeader::MergeImpl(*this, from);
   }
   private:
   static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
@@ -155,15 +159,15 @@ class RpcHeader final :
   void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
   void SharedDtor();
   void SetCachedSize(int size) const final;
-  void InternalSwap(RpcHeader* other);
+  void InternalSwap(RequestHeader* other);
 
   private:
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "protoheader.RpcHeader";
+    return "protoheader.RequestHeader";
   }
   protected:
-  explicit RpcHeader(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+  explicit RequestHeader(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                        bool is_message_owned = false);
   public:
 
@@ -177,38 +181,58 @@ class RpcHeader final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kServNameFieldNumber = 1,
-    kMethodNameFieldNumber = 2,
+    kServiceFieldNumber = 3,
+    kMethodFieldNumber = 4,
+    kRequestIdFieldNumber = 1,
+    kContextIdFieldNumber = 2,
   };
-  // bytes serv_name = 1;
-  void clear_serv_name();
-  const std::string& serv_name() const;
+  // bytes service = 3;
+  void clear_service();
+  const std::string& service() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
-  void set_serv_name(ArgT0&& arg0, ArgT... args);
-  std::string* mutable_serv_name();
-  PROTOBUF_NODISCARD std::string* release_serv_name();
-  void set_allocated_serv_name(std::string* serv_name);
+  void set_service(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_service();
+  PROTOBUF_NODISCARD std::string* release_service();
+  void set_allocated_service(std::string* service);
   private:
-  const std::string& _internal_serv_name() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_serv_name(const std::string& value);
-  std::string* _internal_mutable_serv_name();
+  const std::string& _internal_service() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_service(const std::string& value);
+  std::string* _internal_mutable_service();
   public:
 
-  // bytes method_name = 2;
-  void clear_method_name();
-  const std::string& method_name() const;
+  // bytes method = 4;
+  void clear_method();
+  const std::string& method() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
-  void set_method_name(ArgT0&& arg0, ArgT... args);
-  std::string* mutable_method_name();
-  PROTOBUF_NODISCARD std::string* release_method_name();
-  void set_allocated_method_name(std::string* method_name);
+  void set_method(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_method();
+  PROTOBUF_NODISCARD std::string* release_method();
+  void set_allocated_method(std::string* method);
   private:
-  const std::string& _internal_method_name() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_method_name(const std::string& value);
-  std::string* _internal_mutable_method_name();
+  const std::string& _internal_method() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_method(const std::string& value);
+  std::string* _internal_mutable_method();
   public:
 
-  // @@protoc_insertion_point(class_scope:protoheader.RpcHeader)
+  // uint64 request_id = 1;
+  void clear_request_id();
+  uint64_t request_id() const;
+  void set_request_id(uint64_t value);
+  private:
+  uint64_t _internal_request_id() const;
+  void _internal_set_request_id(uint64_t value);
+  public:
+
+  // uint64 context_id = 2;
+  void clear_context_id();
+  uint64_t context_id() const;
+  void set_context_id(uint64_t value);
+  private:
+  uint64_t _internal_context_id() const;
+  void _internal_set_context_id(uint64_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:protoheader.RequestHeader)
  private:
   class _Internal;
 
@@ -216,8 +240,196 @@ class RpcHeader final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
-    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr serv_name_;
-    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr method_name_;
+    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr service_;
+    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr method_;
+    uint64_t request_id_;
+    uint64_t context_id_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_Header_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ResponseHeader final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:protoheader.ResponseHeader) */ {
+ public:
+  inline ResponseHeader() : ResponseHeader(nullptr) {}
+  ~ResponseHeader() override;
+  explicit PROTOBUF_CONSTEXPR ResponseHeader(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  ResponseHeader(const ResponseHeader& from);
+  ResponseHeader(ResponseHeader&& from) noexcept
+    : ResponseHeader() {
+    *this = ::std::move(from);
+  }
+
+  inline ResponseHeader& operator=(const ResponseHeader& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ResponseHeader& operator=(ResponseHeader&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ResponseHeader& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ResponseHeader* internal_default_instance() {
+    return reinterpret_cast<const ResponseHeader*>(
+               &_ResponseHeader_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    1;
+
+  friend void swap(ResponseHeader& a, ResponseHeader& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ResponseHeader* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ResponseHeader* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ResponseHeader* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ResponseHeader>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const ResponseHeader& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const ResponseHeader& from) {
+    ResponseHeader::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ResponseHeader* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "protoheader.ResponseHeader";
+  }
+  protected:
+  explicit ResponseHeader(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kMsgFieldNumber = 4,
+    kRequestIdFieldNumber = 1,
+    kContextIdFieldNumber = 2,
+    kCodeFieldNumber = 3,
+  };
+  // bytes msg = 4;
+  void clear_msg();
+  const std::string& msg() const;
+  template <typename ArgT0 = const std::string&, typename... ArgT>
+  void set_msg(ArgT0&& arg0, ArgT... args);
+  std::string* mutable_msg();
+  PROTOBUF_NODISCARD std::string* release_msg();
+  void set_allocated_msg(std::string* msg);
+  private:
+  const std::string& _internal_msg() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_msg(const std::string& value);
+  std::string* _internal_mutable_msg();
+  public:
+
+  // uint64 request_id = 1;
+  void clear_request_id();
+  uint64_t request_id() const;
+  void set_request_id(uint64_t value);
+  private:
+  uint64_t _internal_request_id() const;
+  void _internal_set_request_id(uint64_t value);
+  public:
+
+  // uint64 context_id = 2;
+  void clear_context_id();
+  uint64_t context_id() const;
+  void set_context_id(uint64_t value);
+  private:
+  uint64_t _internal_context_id() const;
+  void _internal_set_context_id(uint64_t value);
+  public:
+
+  // int32 code = 3;
+  void clear_code();
+  int32_t code() const;
+  void set_code(int32_t value);
+  private:
+  int32_t _internal_code() const;
+  void _internal_set_code(int32_t value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:protoheader.ResponseHeader)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr msg_;
+    uint64_t request_id_;
+    uint64_t context_id_;
+    int32_t code_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -232,111 +444,267 @@ class RpcHeader final :
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
-// RpcHeader
+// RequestHeader
 
-// bytes serv_name = 1;
-inline void RpcHeader::clear_serv_name() {
-  _impl_.serv_name_.ClearToEmpty();
+// uint64 request_id = 1;
+inline void RequestHeader::clear_request_id() {
+  _impl_.request_id_ = uint64_t{0u};
 }
-inline const std::string& RpcHeader::serv_name() const {
-  // @@protoc_insertion_point(field_get:protoheader.RpcHeader.serv_name)
-  return _internal_serv_name();
+inline uint64_t RequestHeader::_internal_request_id() const {
+  return _impl_.request_id_;
+}
+inline uint64_t RequestHeader::request_id() const {
+  // @@protoc_insertion_point(field_get:protoheader.RequestHeader.request_id)
+  return _internal_request_id();
+}
+inline void RequestHeader::_internal_set_request_id(uint64_t value) {
+  
+  _impl_.request_id_ = value;
+}
+inline void RequestHeader::set_request_id(uint64_t value) {
+  _internal_set_request_id(value);
+  // @@protoc_insertion_point(field_set:protoheader.RequestHeader.request_id)
+}
+
+// uint64 context_id = 2;
+inline void RequestHeader::clear_context_id() {
+  _impl_.context_id_ = uint64_t{0u};
+}
+inline uint64_t RequestHeader::_internal_context_id() const {
+  return _impl_.context_id_;
+}
+inline uint64_t RequestHeader::context_id() const {
+  // @@protoc_insertion_point(field_get:protoheader.RequestHeader.context_id)
+  return _internal_context_id();
+}
+inline void RequestHeader::_internal_set_context_id(uint64_t value) {
+  
+  _impl_.context_id_ = value;
+}
+inline void RequestHeader::set_context_id(uint64_t value) {
+  _internal_set_context_id(value);
+  // @@protoc_insertion_point(field_set:protoheader.RequestHeader.context_id)
+}
+
+// bytes service = 3;
+inline void RequestHeader::clear_service() {
+  _impl_.service_.ClearToEmpty();
+}
+inline const std::string& RequestHeader::service() const {
+  // @@protoc_insertion_point(field_get:protoheader.RequestHeader.service)
+  return _internal_service();
 }
 template <typename ArgT0, typename... ArgT>
 inline PROTOBUF_ALWAYS_INLINE
-void RpcHeader::set_serv_name(ArgT0&& arg0, ArgT... args) {
+void RequestHeader::set_service(ArgT0&& arg0, ArgT... args) {
  
- _impl_.serv_name_.SetBytes(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set:protoheader.RpcHeader.serv_name)
+ _impl_.service_.SetBytes(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:protoheader.RequestHeader.service)
 }
-inline std::string* RpcHeader::mutable_serv_name() {
-  std::string* _s = _internal_mutable_serv_name();
-  // @@protoc_insertion_point(field_mutable:protoheader.RpcHeader.serv_name)
+inline std::string* RequestHeader::mutable_service() {
+  std::string* _s = _internal_mutable_service();
+  // @@protoc_insertion_point(field_mutable:protoheader.RequestHeader.service)
   return _s;
 }
-inline const std::string& RpcHeader::_internal_serv_name() const {
-  return _impl_.serv_name_.Get();
+inline const std::string& RequestHeader::_internal_service() const {
+  return _impl_.service_.Get();
 }
-inline void RpcHeader::_internal_set_serv_name(const std::string& value) {
+inline void RequestHeader::_internal_set_service(const std::string& value) {
   
-  _impl_.serv_name_.Set(value, GetArenaForAllocation());
+  _impl_.service_.Set(value, GetArenaForAllocation());
 }
-inline std::string* RpcHeader::_internal_mutable_serv_name() {
+inline std::string* RequestHeader::_internal_mutable_service() {
   
-  return _impl_.serv_name_.Mutable(GetArenaForAllocation());
+  return _impl_.service_.Mutable(GetArenaForAllocation());
 }
-inline std::string* RpcHeader::release_serv_name() {
-  // @@protoc_insertion_point(field_release:protoheader.RpcHeader.serv_name)
-  return _impl_.serv_name_.Release();
+inline std::string* RequestHeader::release_service() {
+  // @@protoc_insertion_point(field_release:protoheader.RequestHeader.service)
+  return _impl_.service_.Release();
 }
-inline void RpcHeader::set_allocated_serv_name(std::string* serv_name) {
-  if (serv_name != nullptr) {
+inline void RequestHeader::set_allocated_service(std::string* service) {
+  if (service != nullptr) {
     
   } else {
     
   }
-  _impl_.serv_name_.SetAllocated(serv_name, GetArenaForAllocation());
+  _impl_.service_.SetAllocated(service, GetArenaForAllocation());
 #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (_impl_.serv_name_.IsDefault()) {
-    _impl_.serv_name_.Set("", GetArenaForAllocation());
+  if (_impl_.service_.IsDefault()) {
+    _impl_.service_.Set("", GetArenaForAllocation());
   }
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:protoheader.RpcHeader.serv_name)
+  // @@protoc_insertion_point(field_set_allocated:protoheader.RequestHeader.service)
 }
 
-// bytes method_name = 2;
-inline void RpcHeader::clear_method_name() {
-  _impl_.method_name_.ClearToEmpty();
+// bytes method = 4;
+inline void RequestHeader::clear_method() {
+  _impl_.method_.ClearToEmpty();
 }
-inline const std::string& RpcHeader::method_name() const {
-  // @@protoc_insertion_point(field_get:protoheader.RpcHeader.method_name)
-  return _internal_method_name();
+inline const std::string& RequestHeader::method() const {
+  // @@protoc_insertion_point(field_get:protoheader.RequestHeader.method)
+  return _internal_method();
 }
 template <typename ArgT0, typename... ArgT>
 inline PROTOBUF_ALWAYS_INLINE
-void RpcHeader::set_method_name(ArgT0&& arg0, ArgT... args) {
+void RequestHeader::set_method(ArgT0&& arg0, ArgT... args) {
  
- _impl_.method_name_.SetBytes(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set:protoheader.RpcHeader.method_name)
+ _impl_.method_.SetBytes(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:protoheader.RequestHeader.method)
 }
-inline std::string* RpcHeader::mutable_method_name() {
-  std::string* _s = _internal_mutable_method_name();
-  // @@protoc_insertion_point(field_mutable:protoheader.RpcHeader.method_name)
+inline std::string* RequestHeader::mutable_method() {
+  std::string* _s = _internal_mutable_method();
+  // @@protoc_insertion_point(field_mutable:protoheader.RequestHeader.method)
   return _s;
 }
-inline const std::string& RpcHeader::_internal_method_name() const {
-  return _impl_.method_name_.Get();
+inline const std::string& RequestHeader::_internal_method() const {
+  return _impl_.method_.Get();
 }
-inline void RpcHeader::_internal_set_method_name(const std::string& value) {
+inline void RequestHeader::_internal_set_method(const std::string& value) {
   
-  _impl_.method_name_.Set(value, GetArenaForAllocation());
+  _impl_.method_.Set(value, GetArenaForAllocation());
 }
-inline std::string* RpcHeader::_internal_mutable_method_name() {
+inline std::string* RequestHeader::_internal_mutable_method() {
   
-  return _impl_.method_name_.Mutable(GetArenaForAllocation());
+  return _impl_.method_.Mutable(GetArenaForAllocation());
 }
-inline std::string* RpcHeader::release_method_name() {
-  // @@protoc_insertion_point(field_release:protoheader.RpcHeader.method_name)
-  return _impl_.method_name_.Release();
+inline std::string* RequestHeader::release_method() {
+  // @@protoc_insertion_point(field_release:protoheader.RequestHeader.method)
+  return _impl_.method_.Release();
 }
-inline void RpcHeader::set_allocated_method_name(std::string* method_name) {
-  if (method_name != nullptr) {
+inline void RequestHeader::set_allocated_method(std::string* method) {
+  if (method != nullptr) {
     
   } else {
     
   }
-  _impl_.method_name_.SetAllocated(method_name, GetArenaForAllocation());
+  _impl_.method_.SetAllocated(method, GetArenaForAllocation());
 #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (_impl_.method_name_.IsDefault()) {
-    _impl_.method_name_.Set("", GetArenaForAllocation());
+  if (_impl_.method_.IsDefault()) {
+    _impl_.method_.Set("", GetArenaForAllocation());
   }
 #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:protoheader.RpcHeader.method_name)
+  // @@protoc_insertion_point(field_set_allocated:protoheader.RequestHeader.method)
+}
+
+// -------------------------------------------------------------------
+
+// ResponseHeader
+
+// uint64 request_id = 1;
+inline void ResponseHeader::clear_request_id() {
+  _impl_.request_id_ = uint64_t{0u};
+}
+inline uint64_t ResponseHeader::_internal_request_id() const {
+  return _impl_.request_id_;
+}
+inline uint64_t ResponseHeader::request_id() const {
+  // @@protoc_insertion_point(field_get:protoheader.ResponseHeader.request_id)
+  return _internal_request_id();
+}
+inline void ResponseHeader::_internal_set_request_id(uint64_t value) {
+  
+  _impl_.request_id_ = value;
+}
+inline void ResponseHeader::set_request_id(uint64_t value) {
+  _internal_set_request_id(value);
+  // @@protoc_insertion_point(field_set:protoheader.ResponseHeader.request_id)
+}
+
+// uint64 context_id = 2;
+inline void ResponseHeader::clear_context_id() {
+  _impl_.context_id_ = uint64_t{0u};
+}
+inline uint64_t ResponseHeader::_internal_context_id() const {
+  return _impl_.context_id_;
+}
+inline uint64_t ResponseHeader::context_id() const {
+  // @@protoc_insertion_point(field_get:protoheader.ResponseHeader.context_id)
+  return _internal_context_id();
+}
+inline void ResponseHeader::_internal_set_context_id(uint64_t value) {
+  
+  _impl_.context_id_ = value;
+}
+inline void ResponseHeader::set_context_id(uint64_t value) {
+  _internal_set_context_id(value);
+  // @@protoc_insertion_point(field_set:protoheader.ResponseHeader.context_id)
+}
+
+// int32 code = 3;
+inline void ResponseHeader::clear_code() {
+  _impl_.code_ = 0;
+}
+inline int32_t ResponseHeader::_internal_code() const {
+  return _impl_.code_;
+}
+inline int32_t ResponseHeader::code() const {
+  // @@protoc_insertion_point(field_get:protoheader.ResponseHeader.code)
+  return _internal_code();
+}
+inline void ResponseHeader::_internal_set_code(int32_t value) {
+  
+  _impl_.code_ = value;
+}
+inline void ResponseHeader::set_code(int32_t value) {
+  _internal_set_code(value);
+  // @@protoc_insertion_point(field_set:protoheader.ResponseHeader.code)
+}
+
+// bytes msg = 4;
+inline void ResponseHeader::clear_msg() {
+  _impl_.msg_.ClearToEmpty();
+}
+inline const std::string& ResponseHeader::msg() const {
+  // @@protoc_insertion_point(field_get:protoheader.ResponseHeader.msg)
+  return _internal_msg();
+}
+template <typename ArgT0, typename... ArgT>
+inline PROTOBUF_ALWAYS_INLINE
+void ResponseHeader::set_msg(ArgT0&& arg0, ArgT... args) {
+ 
+ _impl_.msg_.SetBytes(static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:protoheader.ResponseHeader.msg)
+}
+inline std::string* ResponseHeader::mutable_msg() {
+  std::string* _s = _internal_mutable_msg();
+  // @@protoc_insertion_point(field_mutable:protoheader.ResponseHeader.msg)
+  return _s;
+}
+inline const std::string& ResponseHeader::_internal_msg() const {
+  return _impl_.msg_.Get();
+}
+inline void ResponseHeader::_internal_set_msg(const std::string& value) {
+  
+  _impl_.msg_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ResponseHeader::_internal_mutable_msg() {
+  
+  return _impl_.msg_.Mutable(GetArenaForAllocation());
+}
+inline std::string* ResponseHeader::release_msg() {
+  // @@protoc_insertion_point(field_release:protoheader.ResponseHeader.msg)
+  return _impl_.msg_.Release();
+}
+inline void ResponseHeader::set_allocated_msg(std::string* msg) {
+  if (msg != nullptr) {
+    
+  } else {
+    
+  }
+  _impl_.msg_.SetAllocated(msg, GetArenaForAllocation());
+#ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (_impl_.msg_.IsDefault()) {
+    _impl_.msg_.Set("", GetArenaForAllocation());
+  }
+#endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:protoheader.ResponseHeader.msg)
 }
 
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 

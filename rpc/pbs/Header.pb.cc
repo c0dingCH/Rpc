@@ -21,53 +21,88 @@ namespace _pb = ::PROTOBUF_NAMESPACE_ID;
 namespace _pbi = _pb::internal;
 
 namespace protoheader {
-PROTOBUF_CONSTEXPR RpcHeader::RpcHeader(
+PROTOBUF_CONSTEXPR RequestHeader::RequestHeader(
     ::_pbi::ConstantInitialized): _impl_{
-    /*decltype(_impl_.serv_name_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
-  , /*decltype(_impl_.method_name_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+    /*decltype(_impl_.service_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.method_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.request_id_)*/uint64_t{0u}
+  , /*decltype(_impl_.context_id_)*/uint64_t{0u}
   , /*decltype(_impl_._cached_size_)*/{}} {}
-struct RpcHeaderDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR RpcHeaderDefaultTypeInternal()
+struct RequestHeaderDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR RequestHeaderDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
-  ~RpcHeaderDefaultTypeInternal() {}
+  ~RequestHeaderDefaultTypeInternal() {}
   union {
-    RpcHeader _instance;
+    RequestHeader _instance;
   };
 };
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RpcHeaderDefaultTypeInternal _RpcHeader_default_instance_;
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 RequestHeaderDefaultTypeInternal _RequestHeader_default_instance_;
+PROTOBUF_CONSTEXPR ResponseHeader::ResponseHeader(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.msg_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
+  , /*decltype(_impl_.request_id_)*/uint64_t{0u}
+  , /*decltype(_impl_.context_id_)*/uint64_t{0u}
+  , /*decltype(_impl_.code_)*/0
+  , /*decltype(_impl_._cached_size_)*/{}} {}
+struct ResponseHeaderDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ResponseHeaderDefaultTypeInternal()
+      : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ResponseHeaderDefaultTypeInternal() {}
+  union {
+    ResponseHeader _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ResponseHeaderDefaultTypeInternal _ResponseHeader_default_instance_;
 }  // namespace protoheader
-static ::_pb::Metadata file_level_metadata_Header_2eproto[1];
+static ::_pb::Metadata file_level_metadata_Header_2eproto[2];
 static constexpr ::_pb::EnumDescriptor const** file_level_enum_descriptors_Header_2eproto = nullptr;
 static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_Header_2eproto = nullptr;
 
 const uint32_t TableStruct_Header_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::protoheader::RpcHeader, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::protoheader::RequestHeader, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::protoheader::RpcHeader, _impl_.serv_name_),
-  PROTOBUF_FIELD_OFFSET(::protoheader::RpcHeader, _impl_.method_name_),
+  PROTOBUF_FIELD_OFFSET(::protoheader::RequestHeader, _impl_.request_id_),
+  PROTOBUF_FIELD_OFFSET(::protoheader::RequestHeader, _impl_.context_id_),
+  PROTOBUF_FIELD_OFFSET(::protoheader::RequestHeader, _impl_.service_),
+  PROTOBUF_FIELD_OFFSET(::protoheader::RequestHeader, _impl_.method_),
+  ~0u,  // no _has_bits_
+  PROTOBUF_FIELD_OFFSET(::protoheader::ResponseHeader, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  ~0u,  // no _inlined_string_donated_
+  PROTOBUF_FIELD_OFFSET(::protoheader::ResponseHeader, _impl_.request_id_),
+  PROTOBUF_FIELD_OFFSET(::protoheader::ResponseHeader, _impl_.context_id_),
+  PROTOBUF_FIELD_OFFSET(::protoheader::ResponseHeader, _impl_.code_),
+  PROTOBUF_FIELD_OFFSET(::protoheader::ResponseHeader, _impl_.msg_),
 };
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, -1, -1, sizeof(::protoheader::RpcHeader)},
+  { 0, -1, -1, sizeof(::protoheader::RequestHeader)},
+  { 10, -1, -1, sizeof(::protoheader::ResponseHeader)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
-  &::protoheader::_RpcHeader_default_instance_._instance,
+  &::protoheader::_RequestHeader_default_instance_._instance,
+  &::protoheader::_ResponseHeader_default_instance_._instance,
 };
 
 const char descriptor_table_protodef_Header_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\014Header.proto\022\013protoheader\"3\n\tRpcHeader"
-  "\022\021\n\tserv_name\030\001 \001(\014\022\023\n\013method_name\030\002 \001(\014"
-  "b\006proto3"
+  "\n\014Header.proto\022\013protoheader\"X\n\rRequestHe"
+  "ader\022\022\n\nrequest_id\030\001 \001(\004\022\022\n\ncontext_id\030\002"
+  " \001(\004\022\017\n\007service\030\003 \001(\014\022\016\n\006method\030\004 \001(\014\"S\n"
+  "\016ResponseHeader\022\022\n\nrequest_id\030\001 \001(\004\022\022\n\nc"
+  "ontext_id\030\002 \001(\004\022\014\n\004code\030\003 \001(\005\022\013\n\003msg\030\004 \001"
+  "(\014b\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_Header_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_Header_2eproto = {
-    false, false, 88, descriptor_table_protodef_Header_2eproto,
+    false, false, 210, descriptor_table_protodef_Header_2eproto,
     "Header.proto",
-    &descriptor_table_Header_2eproto_once, nullptr, 0, 1,
+    &descriptor_table_Header_2eproto_once, nullptr, 0, 2,
     schemas, file_default_instances, TableStruct_Header_2eproto::offsets,
     file_level_metadata_Header_2eproto, file_level_enum_descriptors_Header_2eproto,
     file_level_service_descriptors_Header_2eproto,
@@ -82,65 +117,72 @@ namespace protoheader {
 
 // ===================================================================
 
-class RpcHeader::_Internal {
+class RequestHeader::_Internal {
  public:
 };
 
-RpcHeader::RpcHeader(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+RequestHeader::RequestHeader(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
-  // @@protoc_insertion_point(arena_constructor:protoheader.RpcHeader)
+  // @@protoc_insertion_point(arena_constructor:protoheader.RequestHeader)
 }
-RpcHeader::RpcHeader(const RpcHeader& from)
+RequestHeader::RequestHeader(const RequestHeader& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
-  RpcHeader* const _this = this; (void)_this;
+  RequestHeader* const _this = this; (void)_this;
   new (&_impl_) Impl_{
-      decltype(_impl_.serv_name_){}
-    , decltype(_impl_.method_name_){}
+      decltype(_impl_.service_){}
+    , decltype(_impl_.method_){}
+    , decltype(_impl_.request_id_){}
+    , decltype(_impl_.context_id_){}
     , /*decltype(_impl_._cached_size_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  _impl_.serv_name_.InitDefault();
+  _impl_.service_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-    _impl_.serv_name_.Set("", GetArenaForAllocation());
+    _impl_.service_.Set("", GetArenaForAllocation());
   #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (!from._internal_serv_name().empty()) {
-    _this->_impl_.serv_name_.Set(from._internal_serv_name(), 
+  if (!from._internal_service().empty()) {
+    _this->_impl_.service_.Set(from._internal_service(), 
       _this->GetArenaForAllocation());
   }
-  _impl_.method_name_.InitDefault();
+  _impl_.method_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-    _impl_.method_name_.Set("", GetArenaForAllocation());
+    _impl_.method_.Set("", GetArenaForAllocation());
   #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (!from._internal_method_name().empty()) {
-    _this->_impl_.method_name_.Set(from._internal_method_name(), 
+  if (!from._internal_method().empty()) {
+    _this->_impl_.method_.Set(from._internal_method(), 
       _this->GetArenaForAllocation());
   }
-  // @@protoc_insertion_point(copy_constructor:protoheader.RpcHeader)
+  ::memcpy(&_impl_.request_id_, &from._impl_.request_id_,
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.context_id_) -
+    reinterpret_cast<char*>(&_impl_.request_id_)) + sizeof(_impl_.context_id_));
+  // @@protoc_insertion_point(copy_constructor:protoheader.RequestHeader)
 }
 
-inline void RpcHeader::SharedCtor(
+inline void RequestHeader::SharedCtor(
     ::_pb::Arena* arena, bool is_message_owned) {
   (void)arena;
   (void)is_message_owned;
   new (&_impl_) Impl_{
-      decltype(_impl_.serv_name_){}
-    , decltype(_impl_.method_name_){}
+      decltype(_impl_.service_){}
+    , decltype(_impl_.method_){}
+    , decltype(_impl_.request_id_){uint64_t{0u}}
+    , decltype(_impl_.context_id_){uint64_t{0u}}
     , /*decltype(_impl_._cached_size_)*/{}
   };
-  _impl_.serv_name_.InitDefault();
+  _impl_.service_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-    _impl_.serv_name_.Set("", GetArenaForAllocation());
+    _impl_.service_.Set("", GetArenaForAllocation());
   #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  _impl_.method_name_.InitDefault();
+  _impl_.method_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-    _impl_.method_name_.Set("", GetArenaForAllocation());
+    _impl_.method_.Set("", GetArenaForAllocation());
   #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 }
 
-RpcHeader::~RpcHeader() {
-  // @@protoc_insertion_point(destructor:protoheader.RpcHeader)
+RequestHeader::~RequestHeader() {
+  // @@protoc_insertion_point(destructor:protoheader.RequestHeader)
   if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
   (void)arena;
     return;
@@ -148,46 +190,65 @@ RpcHeader::~RpcHeader() {
   SharedDtor();
 }
 
-inline void RpcHeader::SharedDtor() {
+inline void RequestHeader::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
-  _impl_.serv_name_.Destroy();
-  _impl_.method_name_.Destroy();
+  _impl_.service_.Destroy();
+  _impl_.method_.Destroy();
 }
 
-void RpcHeader::SetCachedSize(int size) const {
+void RequestHeader::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-void RpcHeader::Clear() {
-// @@protoc_insertion_point(message_clear_start:protoheader.RpcHeader)
+void RequestHeader::Clear() {
+// @@protoc_insertion_point(message_clear_start:protoheader.RequestHeader)
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.serv_name_.ClearToEmpty();
-  _impl_.method_name_.ClearToEmpty();
+  _impl_.service_.ClearToEmpty();
+  _impl_.method_.ClearToEmpty();
+  ::memset(&_impl_.request_id_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&_impl_.context_id_) -
+      reinterpret_cast<char*>(&_impl_.request_id_)) + sizeof(_impl_.context_id_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* RpcHeader::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+const char* RequestHeader::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     uint32_t tag;
     ptr = ::_pbi::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // bytes serv_name = 1;
+      // uint64 request_id = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 10)) {
-          auto str = _internal_mutable_serv_name();
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          _impl_.request_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // uint64 context_id = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          _impl_.context_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // bytes service = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 26)) {
+          auto str = _internal_mutable_service();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
         } else
           goto handle_unusual;
         continue;
-      // bytes method_name = 2;
-      case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
-          auto str = _internal_mutable_method_name();
+      // bytes method = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 34)) {
+          auto str = _internal_mutable_method();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
         } else
@@ -216,119 +277,439 @@ failure:
 #undef CHK_
 }
 
-uint8_t* RpcHeader::_InternalSerialize(
+uint8_t* RequestHeader::_InternalSerialize(
     uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:protoheader.RpcHeader)
+  // @@protoc_insertion_point(serialize_to_array_start:protoheader.RequestHeader)
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // bytes serv_name = 1;
-  if (!this->_internal_serv_name().empty()) {
-    target = stream->WriteBytesMaybeAliased(
-        1, this->_internal_serv_name(), target);
+  // uint64 request_id = 1;
+  if (this->_internal_request_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(1, this->_internal_request_id(), target);
   }
 
-  // bytes method_name = 2;
-  if (!this->_internal_method_name().empty()) {
+  // uint64 context_id = 2;
+  if (this->_internal_context_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(2, this->_internal_context_id(), target);
+  }
+
+  // bytes service = 3;
+  if (!this->_internal_service().empty()) {
     target = stream->WriteBytesMaybeAliased(
-        2, this->_internal_method_name(), target);
+        3, this->_internal_service(), target);
+  }
+
+  // bytes method = 4;
+  if (!this->_internal_method().empty()) {
+    target = stream->WriteBytesMaybeAliased(
+        4, this->_internal_method(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:protoheader.RpcHeader)
+  // @@protoc_insertion_point(serialize_to_array_end:protoheader.RequestHeader)
   return target;
 }
 
-size_t RpcHeader::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:protoheader.RpcHeader)
+size_t RequestHeader::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protoheader.RequestHeader)
   size_t total_size = 0;
 
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // bytes serv_name = 1;
-  if (!this->_internal_serv_name().empty()) {
+  // bytes service = 3;
+  if (!this->_internal_service().empty()) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_serv_name());
+        this->_internal_service());
   }
 
-  // bytes method_name = 2;
-  if (!this->_internal_method_name().empty()) {
+  // bytes method = 4;
+  if (!this->_internal_method().empty()) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_method_name());
+        this->_internal_method());
+  }
+
+  // uint64 request_id = 1;
+  if (this->_internal_request_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_request_id());
+  }
+
+  // uint64 context_id = 2;
+  if (this->_internal_context_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_context_id());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData RpcHeader::_class_data_ = {
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData RequestHeader::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    RpcHeader::MergeImpl
+    RequestHeader::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*RpcHeader::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*RequestHeader::GetClassData() const { return &_class_data_; }
 
 
-void RpcHeader::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<RpcHeader*>(&to_msg);
-  auto& from = static_cast<const RpcHeader&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:protoheader.RpcHeader)
+void RequestHeader::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<RequestHeader*>(&to_msg);
+  auto& from = static_cast<const RequestHeader&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protoheader.RequestHeader)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (!from._internal_serv_name().empty()) {
-    _this->_internal_set_serv_name(from._internal_serv_name());
+  if (!from._internal_service().empty()) {
+    _this->_internal_set_service(from._internal_service());
   }
-  if (!from._internal_method_name().empty()) {
-    _this->_internal_set_method_name(from._internal_method_name());
+  if (!from._internal_method().empty()) {
+    _this->_internal_set_method(from._internal_method());
+  }
+  if (from._internal_request_id() != 0) {
+    _this->_internal_set_request_id(from._internal_request_id());
+  }
+  if (from._internal_context_id() != 0) {
+    _this->_internal_set_context_id(from._internal_context_id());
   }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void RpcHeader::CopyFrom(const RpcHeader& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:protoheader.RpcHeader)
+void RequestHeader::CopyFrom(const RequestHeader& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protoheader.RequestHeader)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool RpcHeader::IsInitialized() const {
+bool RequestHeader::IsInitialized() const {
   return true;
 }
 
-void RpcHeader::InternalSwap(RpcHeader* other) {
+void RequestHeader::InternalSwap(RequestHeader* other) {
   using std::swap;
   auto* lhs_arena = GetArenaForAllocation();
   auto* rhs_arena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
-      &_impl_.serv_name_, lhs_arena,
-      &other->_impl_.serv_name_, rhs_arena
+      &_impl_.service_, lhs_arena,
+      &other->_impl_.service_, rhs_arena
   );
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
-      &_impl_.method_name_, lhs_arena,
-      &other->_impl_.method_name_, rhs_arena
+      &_impl_.method_, lhs_arena,
+      &other->_impl_.method_, rhs_arena
   );
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(RequestHeader, _impl_.context_id_)
+      + sizeof(RequestHeader::_impl_.context_id_)
+      - PROTOBUF_FIELD_OFFSET(RequestHeader, _impl_.request_id_)>(
+          reinterpret_cast<char*>(&_impl_.request_id_),
+          reinterpret_cast<char*>(&other->_impl_.request_id_));
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata RpcHeader::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata RequestHeader::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_Header_2eproto_getter, &descriptor_table_Header_2eproto_once,
       file_level_metadata_Header_2eproto[0]);
 }
 
+// ===================================================================
+
+class ResponseHeader::_Internal {
+ public:
+};
+
+ResponseHeader::ResponseHeader(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                         bool is_message_owned)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  SharedCtor(arena, is_message_owned);
+  // @@protoc_insertion_point(arena_constructor:protoheader.ResponseHeader)
+}
+ResponseHeader::ResponseHeader(const ResponseHeader& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  ResponseHeader* const _this = this; (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.msg_){}
+    , decltype(_impl_.request_id_){}
+    , decltype(_impl_.context_id_){}
+    , decltype(_impl_.code_){}
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _impl_.msg_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.msg_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_msg().empty()) {
+    _this->_impl_.msg_.Set(from._internal_msg(), 
+      _this->GetArenaForAllocation());
+  }
+  ::memcpy(&_impl_.request_id_, &from._impl_.request_id_,
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.code_) -
+    reinterpret_cast<char*>(&_impl_.request_id_)) + sizeof(_impl_.code_));
+  // @@protoc_insertion_point(copy_constructor:protoheader.ResponseHeader)
+}
+
+inline void ResponseHeader::SharedCtor(
+    ::_pb::Arena* arena, bool is_message_owned) {
+  (void)arena;
+  (void)is_message_owned;
+  new (&_impl_) Impl_{
+      decltype(_impl_.msg_){}
+    , decltype(_impl_.request_id_){uint64_t{0u}}
+    , decltype(_impl_.context_id_){uint64_t{0u}}
+    , decltype(_impl_.code_){0}
+    , /*decltype(_impl_._cached_size_)*/{}
+  };
+  _impl_.msg_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+    _impl_.msg_.Set("", GetArenaForAllocation());
+  #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+
+ResponseHeader::~ResponseHeader() {
+  // @@protoc_insertion_point(destructor:protoheader.ResponseHeader)
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
+  SharedDtor();
+}
+
+inline void ResponseHeader::SharedDtor() {
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.msg_.Destroy();
+}
+
+void ResponseHeader::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+void ResponseHeader::Clear() {
+// @@protoc_insertion_point(message_clear_start:protoheader.ResponseHeader)
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.msg_.ClearToEmpty();
+  ::memset(&_impl_.request_id_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&_impl_.code_) -
+      reinterpret_cast<char*>(&_impl_.request_id_)) + sizeof(_impl_.code_));
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* ResponseHeader::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // uint64 request_id = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 8)) {
+          _impl_.request_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // uint64 context_id = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 16)) {
+          _impl_.context_id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int32 code = 3;
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 24)) {
+          _impl_.code_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // bytes msg = 4;
+      case 4:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 34)) {
+          auto str = _internal_mutable_msg();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
+}
+
+uint8_t* ResponseHeader::_InternalSerialize(
+    uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:protoheader.ResponseHeader)
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  // uint64 request_id = 1;
+  if (this->_internal_request_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(1, this->_internal_request_id(), target);
+  }
+
+  // uint64 context_id = 2;
+  if (this->_internal_context_id() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(2, this->_internal_context_id(), target);
+  }
+
+  // int32 code = 3;
+  if (this->_internal_code() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(3, this->_internal_code(), target);
+  }
+
+  // bytes msg = 4;
+  if (!this->_internal_msg().empty()) {
+    target = stream->WriteBytesMaybeAliased(
+        4, this->_internal_msg(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:protoheader.ResponseHeader)
+  return target;
+}
+
+size_t ResponseHeader::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:protoheader.ResponseHeader)
+  size_t total_size = 0;
+
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // bytes msg = 4;
+  if (!this->_internal_msg().empty()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+        this->_internal_msg());
+  }
+
+  // uint64 request_id = 1;
+  if (this->_internal_request_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_request_id());
+  }
+
+  // uint64 context_id = 2;
+  if (this->_internal_context_id() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(this->_internal_context_id());
+  }
+
+  // int32 code = 3;
+  if (this->_internal_code() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(this->_internal_code());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ResponseHeader::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
+    ResponseHeader::MergeImpl
+};
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ResponseHeader::GetClassData() const { return &_class_data_; }
+
+
+void ResponseHeader::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<ResponseHeader*>(&to_msg);
+  auto& from = static_cast<const ResponseHeader&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:protoheader.ResponseHeader)
+  GOOGLE_DCHECK_NE(&from, _this);
+  uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_msg().empty()) {
+    _this->_internal_set_msg(from._internal_msg());
+  }
+  if (from._internal_request_id() != 0) {
+    _this->_internal_set_request_id(from._internal_request_id());
+  }
+  if (from._internal_context_id() != 0) {
+    _this->_internal_set_context_id(from._internal_context_id());
+  }
+  if (from._internal_code() != 0) {
+    _this->_internal_set_code(from._internal_code());
+  }
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ResponseHeader::CopyFrom(const ResponseHeader& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:protoheader.ResponseHeader)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ResponseHeader::IsInitialized() const {
+  return true;
+}
+
+void ResponseHeader::InternalSwap(ResponseHeader* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &_impl_.msg_, lhs_arena,
+      &other->_impl_.msg_, rhs_arena
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ResponseHeader, _impl_.code_)
+      + sizeof(ResponseHeader::_impl_.code_)
+      - PROTOBUF_FIELD_OFFSET(ResponseHeader, _impl_.request_id_)>(
+          reinterpret_cast<char*>(&_impl_.request_id_),
+          reinterpret_cast<char*>(&other->_impl_.request_id_));
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata ResponseHeader::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_Header_2eproto_getter, &descriptor_table_Header_2eproto_once,
+      file_level_metadata_Header_2eproto[1]);
+}
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace protoheader
 PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::protoheader::RpcHeader*
-Arena::CreateMaybeMessage< ::protoheader::RpcHeader >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::protoheader::RpcHeader >(arena);
+template<> PROTOBUF_NOINLINE ::protoheader::RequestHeader*
+Arena::CreateMaybeMessage< ::protoheader::RequestHeader >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protoheader::RequestHeader >(arena);
+}
+template<> PROTOBUF_NOINLINE ::protoheader::ResponseHeader*
+Arena::CreateMaybeMessage< ::protoheader::ResponseHeader >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::protoheader::ResponseHeader >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

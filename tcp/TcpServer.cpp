@@ -40,10 +40,11 @@ void TcpServer::Start(){
   event_loop_thread_pool_ -> Start();
 }
 
+
 void TcpServer::HandleNewConnection(int sockfd){
   assert(sockfd != -1);
-
-  std::shared_ptr<TcpConnection> conn = std::make_shared<TcpConnection>(event_loop_thread_pool_->GetNextLoop(),sockfd, next_connid_);
+  auto loop = GetNextLoop();
+  std::shared_ptr<TcpConnection> conn = std::make_shared<TcpConnection>(loop, sockfd, next_connid_);
   conn->SetOnCloseCallback(std::bind(&TcpServer::HandleCloseConnection, this, std::placeholders::_1));
   conn->SetOnMessageCallback(on_message_);//自己保留一份，不要用move
   conn->SetOnConnectCallback(on_connect_);
@@ -54,16 +55,18 @@ void TcpServer::HandleNewConnection(int sockfd){
     next_connid_ = 1;
   }
   
-  conn->ConnectionEstablished();
+  loop -> QueueOneFunc(std::bind(&TcpConnection::ConnectionEstablished, conn));
 }
 
 void TcpServer::HandleCloseConnection(const std::shared_ptr<TcpConnection> &conn){
-  main_reactor_->RunOneFunc(std::bind(&TcpServer::HandleCloseConnectionInPoller, this, conn));
+  if(conn -> IsClient())main_reactor_->RunOneFunc(std::bind(&TcpServer::HandleCloseConnectionInPoller, this, conn));
+  else conn -> ConnectionDestructor();
 } 
 
 void TcpServer::HandleCloseConnectionInPoller(const std::shared_ptr<TcpConnection> &conn){
   int sockfd = conn->GetFd();
-  assert(connections_.count(sockfd));
+  auto it = connections_.find(sockfd);
+  assert(it != connections_.end());
   connections_.erase(sockfd);
   
   auto loop = conn->GetLoop();

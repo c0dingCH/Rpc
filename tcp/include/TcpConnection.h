@@ -30,32 +30,11 @@ public:
 
   struct ClientRes{
     EventLoop * loop;
-    uint64_t id;
+    uint64_t context_id;
   };
 
   struct ProviderRes{
-    std::unordered_set<uint64_t> ids;
-    std::string addr;
-
-    void remove(uint64_t id){
-      auto it = ids.find(id);
-      if(it == ids.end()){
-        LOG_ERROR << " re_remove reactor id : "<< id << " in conn";
-      }
-      else{
-        ids.erase(it);
-      }
-    }
-
-    void add(uint64_t id){
-      auto it = ids.find(id);
-      if(it != ids.end()){
-        LOG_ERROR << " re_add reactor id : "<< id << " in conn";
-      }
-      else{
-        ids.insert(id);
-      }
-    }
+    std::unordered_set<uint64_t> context_ids;
   };
 
   TcpConnection(EventLoop * loop, int connfd, int connid);
@@ -93,12 +72,14 @@ public:
   void HandleMessage();
   void HandleWrite();
 
-  void SetRole(Role role){ role_ = role; }
+  void SetRole(Role role);
   bool IsProvider(){ return role_ == Role::kProvider; }
   bool IsClient() { return role_ == Role::kClient; }
   std::variant<ClientRes,ProviderRes> GetRes(){ return res_; }
-  
-  void SetLoadState(){ if(!load_state_)load_state_ = std::make_unique<RpcLoadState>(); }
+  void SetClientRes(EventLoop * loop, uint64_t context_id);
+  void AddContextId(uint64_t context_id);
+  void RemoveContextId(uint64_t context_id); 
+
   RpcLoadState * GetLoadState(){ return load_state_.get(); }
 
 private:

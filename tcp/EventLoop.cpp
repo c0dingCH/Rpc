@@ -114,29 +114,29 @@ void EventLoop::RunEvery(double interval , const std::function<void()> & cb){
 }
 
 uint64_t EventLoop::RoundId(){
-  while(contexts_.count(++id_));
-  return id_;
+  while(contexts_.count(++context_id_) || context_id_ == 0);
+  return context_id_;
 }
 
 uint64_t EventLoop::SetContext(std::unique_ptr<Context> context){
-  auto id = RoundId();
-  contexts_[id] = std::move(context);
-  return id;
+  auto context_id = RoundId();
+  contexts_[context_id] = std::move(context);
+  return context_id;
 }
 
-EventLoop::Context * EventLoop::GetContext(uint64_t id){
-  auto it = contexts_.find(id);
+EventLoop::Context * EventLoop::GetContext(uint64_t context_id){
+  auto it = contexts_.find(context_id);
   if(it == contexts_.end()){
-    LOG_ERROR << "no such reqeust_id : "<< id;
+    LOG_ERROR << "no such reqeust_id : "<< context_id;
     return nullptr;
   }
   return it->second.get();
 }
 
-void EventLoop::RemoveContext(uint64_t id){
-  auto it = contexts_.find(id);
+void EventLoop::RemoveContext(uint64_t context_id){
+  auto it = contexts_.find(context_id);
   if(it == contexts_.end()){
-    LOG_ERROR << "context id : " << id << " double remove";
+    LOG_ERROR << "context id : " << context_id << " double remove";
   }
   else{
     contexts_.erase(it);
