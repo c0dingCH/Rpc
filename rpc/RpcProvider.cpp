@@ -122,6 +122,12 @@ void RpcProvider::OnMessage(const std::shared_ptr<TcpConnection> &conn) {
     uint32_t header_size;
     all_buf.copy((char *)&header_size, 4, 4);
 
+    // 探测包：total_size == 8 && header_size == 0，原样回复
+    if (total_size == 8 && header_size == 0) {
+      conn->Send(std::move(all_buf));
+      continue;
+    }
+
     //header解析
     protoheader::RequestHeader rpc_header;
     std::string serv_name;

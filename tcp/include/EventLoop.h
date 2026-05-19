@@ -21,6 +21,7 @@ public:
     Timer * timer{nullptr};
     int cnt{0};
     long long when{0};
+    long long timeout_ms{200};
   };
 
   EventLoop();

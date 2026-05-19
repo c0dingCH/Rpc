@@ -25,12 +25,13 @@ TcpConnection::TcpConnection(EventLoop * loop, int connfd ,int connid):loop_(loo
   if(loop_ != nullptr){
     channel_ = std::make_unique<Channel>(loop_,connfd_);
     channel_ -> EnableET();  
-    channel_ -> SetReadCallback(std::bind(&TcpConnection::HandleMessage, this)); // 这里用裸指针，避免循环引用
+    channel_ -> SetReadCallback(std::bind(&TcpConnection::HandleMessage, this));
     channel_ -> SetWriteCallback(std::bind(&TcpConnection::HandleWrite, this));
   } 
   read_buffer_ = std::make_unique<Buffer>();
   send_buffer_ = std::make_unique<Buffer>();
   state_ = State::kConnected;
+  load_state_ = std::make_unique<RpcLoadState>(this);
 }
 
 TcpConnection::~TcpConnection(){
@@ -279,9 +280,6 @@ void TcpConnection::SetTimeStamp(TimeStamp timestamp){
 
 void TcpConnection::SetRole(Role role){
   role_ = role;
-  if(IsProvider() && !load_state_){
-    load_state_ = std::make_unique<RpcLoadState>();
-  }
 }
 
 void TcpConnection::SetCtxLoop(uint64_t id, EventLoop * loop){

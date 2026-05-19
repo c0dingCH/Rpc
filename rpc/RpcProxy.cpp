@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <future>
 #include <time.h>
+#include <cstdlib>
 #include <semaphore.h>
 #include <iomanip>
 
@@ -143,7 +144,7 @@ void RpcProxy::OnZkChildEvent(const std::string & path, int depth) {
 }
 
 
-std::shared_ptr<TcpConnection> RpcProxy::FindProvider(const std::string & path) { // 这里读load信息不需要要锁，大致就好了
+std::shared_ptr<TcpConnection> RpcProxy::FindProvider(const std::string & path) {
   std::shared_lock lock_path(mtx_path_);
   auto it = path_node_.find(path);
   if (it == path_node_.end() || it->second.empty()) return nullptr;
@@ -152,17 +153,16 @@ std::shared_ptr<TcpConnection> RpcProxy::FindProvider(const std::string & path) 
 
   std::shared_lock lock_addr(mtx_addr_);
   std::shared_ptr<TcpConnection> best = nullptr;
-  double best_rt = 0;
+  double best_load = 0;
   for (auto & node_name : nodes) {
     auto conn_it = addr_conn_.find(node_name);
     if (conn_it != addr_conn_.end()) {
-      double rt = conn_it->second->GetLoadState()->rt();
-      
-
-      //std::cout<<std::fixed<<std::setprecision(10) << rt<<std::endl;
-      if (!best || rt < best_rt) {
+      auto * state = conn_it->second->GetLoadState();
+      if (!state->IsUp()) continue;
+      double load = state->Load();
+      if (!best || load < best_load) {
         best = conn_it->second;
-        best_rt = rt;
+        best_load = load;
       }
     }
   }
@@ -230,6 +230,11 @@ void RpcProxy::OnMessage(const std::shared_ptr<TcpConnection> & conn) {
       HandleRequest(std::move(header), std::move(all_buf), header_size, conn);
     }
     else{
+      // 探测响应: total_size == 8 && header_size == 0
+      if (total_size == 8 && header_size == 0) {
+        conn->GetLoadState()->HandleProbeResponse();
+        continue;
+      }
       protoheader::ResponseHeader header;
       if(!header.ParseFromString(all_buf.substr(8, header_size))){
         LOG_ERROR << "parse ResponseHeader error";
@@ -285,11 +290,19 @@ void RpcProxy::HandleRequest(protoheader::RequestHeader header,
       return;
     }
 
-    // 更新旧 provider 负载 + 清除映射
+    // 计算指数退避
+    {
+      double factor = 1.8 + static_cast<double>(rand()) / RAND_MAX * 0.4;
+      ctx->timeout_ms = static_cast<long long>(ctx->timeout_ms * factor);
+      if (ctx->timeout_ms > 5000) ctx->timeout_ms = 5000;
+    }
+
+    // 更新旧 provider 负载 + 清除映射（在 provider 的 loop 上)
     old_provider->GetLoop()->RunOneFunc([old_provider, context_id]() {
-      old_provider->GetLoadState()->EnLoad();
-      old_provider->GetLoadState()->AddLoad(kRpcTimeoutMs);
-      old_provider->GetLoadState()->DeLoad();
+      auto * state = old_provider->GetLoadState();
+      state->EnLoad();
+      state->AddLoad(kRpcTimeoutMs, true);
+      state->DeLoad();
       old_provider->RemoveCtxLoop(context_id);
     });
   }
@@ -311,7 +324,8 @@ void RpcProxy::HandleRequest(protoheader::RequestHeader header,
   clock_gettime(CLOCK_MONOTONIC, &ts);
   long long now = ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
 
-  Timer * timer = client_loop->RunAfter(kRpcTimeoutMs / 1000.0,
+  long long cur_timeout_ms = ctx ? ctx->timeout_ms : kRpcTimeoutMs;
+  Timer * timer = client_loop->RunAfter(cur_timeout_ms / 1000.0,
       [this, header, all_buf, old_header_size, client_conn]() mutable {
         HandleRequest(std::move(header), std::move(all_buf), old_header_size, client_conn);
       });
@@ -373,11 +387,11 @@ void RpcProxy::HandleResponse(protoheader::ResponseHeader & header,
     client_conn->SetContextId(0);
 
     // 更新 provider 负载 + 清除映射（在 provider 的 loop 上）， 如果超时了，就由client端来更新负载了
-    provider_conn->GetLoop()->RunOneFunc([provider_conn, rt, context_id]() {
-      provider_conn->GetLoadState()->AddLoad(rt);
-      provider_conn->GetLoadState()->DeLoad();
-      provider_conn->RemoveCtxLoop(context_id);
-    });
+      provider_conn->GetLoop()->RunOneFunc([provider_conn, rt, context_id]() {
+        provider_conn->GetLoadState()->AddLoad(rt, false);
+        provider_conn->GetLoadState()->DeLoad();
+        provider_conn->RemoveCtxLoop(context_id);
+      });
 
     // 转发响应给 client
     client_conn->Send(all_buf);
