@@ -22,9 +22,10 @@ public:
   void ReadTimerFd();
   void HandleRead();
 
-  bool Insert(Timer * timer);
-  void AddTimer(TimeStamp timestamp, const std::function<void()> & cb, double interval);
+  Timer * AddTimer(TimeStamp timestamp, const std::function<void()> & cb, double interval);
+  void DeleteTimer(Timer * timer);
 
+  bool Insert(Timer * timer);
   void ResetTimers();
   void ResetTimerFd(Timer * timer);
 

@@ -16,6 +16,7 @@
 #include <future>
 #include <time.h>
 #include <semaphore.h>
+#include <iomanip>
 
 void ProxyGlobalWatcher(zhandle_t * zh, int type, int state,
                         const char * path, void * ctx) {
@@ -25,7 +26,9 @@ void ProxyGlobalWatcher(zhandle_t * zh, int type, int state,
     sem_post(sem);
   }
   else if (type == ZOO_CHILD_EVENT) {
-    ((RpcProxy *)ctx)->UpdateService(path, false);
+    int depth = 0, len = strlen(path);
+    for(int i = 0;i < len; i++)depth += path[i] == '/';
+    ((RpcProxy *)ctx)->OnZkChildEvent(path, depth);
   }
 }
 
@@ -46,10 +49,10 @@ void RpcProxy::Run() {
   server_ -> Start();
 
   std::string root = "/rpc";
-  auto services = zk_client_->GetChildrens(root.c_str(), false);
+  auto services = zk_client_->GetChildrens(root.c_str(), true);
   for (auto & service : services) {
     std::string serv_path = root + "/" + service;
-    auto methods = zk_client_->GetChildrens(serv_path.c_str(), false);
+    auto methods = zk_client_->GetChildrens(serv_path.c_str(), true);
     for (auto & method : methods) {
       std::string method_path = serv_path + "/" + method;
       UpdateService(method_path, true);
@@ -61,8 +64,10 @@ void RpcProxy::Run() {
 
 
 void RpcProxy::UpdateService(const std::string & path, bool initing) { // Run的逻辑就是，对于UpdateService的path就是method
-  puts("update");
+  std::cout << path<< " "<<"update" << std::endl;
   auto addrs = zk_client_->GetChildrens(path.c_str(), true); // 监听第 3 层的children
+  if(!addrs.size())return;
+
   //node_name == ip:port
   {
     std::unique_lock lock(mtx_path_);
@@ -125,7 +130,20 @@ void RpcProxy::UpdateService(const std::string & path, bool initing) { // Run的
 }
 
 
-TcpConnection * RpcProxy::FindProvider(const std::string & path) {
+void RpcProxy::OnZkChildEvent(const std::string & path, int depth) {
+  if (depth == 3) {
+    UpdateService(path, false);
+  } 
+  else {
+    auto children = zk_client_->GetChildrens(path.c_str(), true);
+    for (auto & child : children){
+      OnZkChildEvent(path + "/" + child, depth + 1);
+    }
+  }
+}
+
+
+std::shared_ptr<TcpConnection> RpcProxy::FindProvider(const std::string & path) { // 这里读load信息不需要要锁，大致就好了
   std::shared_lock lock_path(mtx_path_);
   auto it = path_node_.find(path);
   if (it == path_node_.end() || it->second.empty()) return nullptr;
@@ -133,15 +151,17 @@ TcpConnection * RpcProxy::FindProvider(const std::string & path) {
   lock_path.unlock();
 
   std::shared_lock lock_addr(mtx_addr_);
-  TcpConnection * best = nullptr;
+  std::shared_ptr<TcpConnection> best = nullptr;
   double best_rt = 0;
   for (auto & node_name : nodes) {
     auto conn_it = addr_conn_.find(node_name);
     if (conn_it != addr_conn_.end()) {
-      TcpConnection * cur = conn_it->second.get();
-      double rt = cur->GetLoadState()->rt();
+      double rt = conn_it->second->GetLoadState()->rt();
+      
+
+      //std::cout<<std::fixed<<std::setprecision(10) << rt<<std::endl;
       if (!best || rt < best_rt) {
-        best = cur;
+        best = conn_it->second;
         best_rt = rt;
       }
     }
@@ -156,34 +176,34 @@ void RpcProxy::OnConnect(const std::shared_ptr<TcpConnection> & conn) {
   }
   if (conn->GetState() == TcpConnection::State::kClosed) {
     if (conn->IsClient()) {
-      auto res = conn->GetRes();
-      if (auto * cr = std::get_if<TcpConnection::ClientRes>(&res)) {
-          if(cr->loop) cr->loop->RemoveContext(cr->context_id);
+      uint64_t context_id = conn->GetContextId();
+      if (context_id != 0) {
+        EventLoop * client_loop = conn->GetLoop();
+        auto ctx = client_loop->GetContext(context_id); 
+        if (ctx && ctx->provider_conn) {
+          auto * provider_conn = ctx->provider_conn.get();
+          provider_conn->GetLoop()->RunOneFunc([provider_conn, context_id]() {
+            provider_conn->RemoveCtxLoop(context_id);
+          });
+        }
+        client_loop->RemoveContext(context_id);// context的维护和clent的reactor是同一个，是安全的
+        conn->SetContextId(0);
       }
     }
     else if (conn->IsProvider()) {
-      auto res = conn->GetRes();
-      if (auto * pr = std::get_if<TcpConnection::ProviderRes>(&res)) {
-        EventLoop * loop = conn->GetLoop();
-        for (auto context_id : pr->context_ids) {
-          loop->RemoveContext(context_id);
-        }
-      }
-  
+      // provider 异常关闭，不做额外处理, client请求超时重试就行了 
       std::unique_lock lock(mtx_addr_);
       auto it = addr_conn_.find(conn->GetAddr());
       if(it == addr_conn_.end()){
         LOG_ERROR << "provider_conn remove error";
       }
       else addr_conn_.erase(it);
-      
     }
   }
 }
 
 
 void RpcProxy::OnMessage(const std::shared_ptr<TcpConnection> & conn) {
-  puts("on message");
   if(conn->GetState() != TcpConnection::State::kConnected) return;
 
   Buffer * buf = conn->GetReadBuffer();
@@ -204,14 +224,16 @@ void RpcProxy::OnMessage(const std::shared_ptr<TcpConnection> & conn) {
       protoheader::RequestHeader header;
       if(!header.ParseFromString(all_buf.substr(8, header_size))){
         LOG_ERROR << "parse RequestHeader error";
+        SendErrorResponse(4, "parse RequestHeader error", conn);
         return;
       }
-      HandleRequest(header, std::move(all_buf), header_size, conn);
+      HandleRequest(std::move(header), std::move(all_buf), header_size, conn);
     }
     else{
       protoheader::ResponseHeader header;
       if(!header.ParseFromString(all_buf.substr(8, header_size))){
         LOG_ERROR << "parse ResponseHeader error";
+        SendErrorResponse(5, "parse ResponseHeader error", conn);
         return;
       }
       HandleResponse(header, std::move(all_buf), conn);
@@ -219,66 +241,145 @@ void RpcProxy::OnMessage(const std::shared_ptr<TcpConnection> & conn) {
   }
 }
 
-void RpcProxy::HandleRequest(protoheader::RequestHeader & header,
-                             std::string && all_buf,
+void RpcProxy::SendErrorResponse(int code, const std::string& msg,
+                                  const std::shared_ptr<TcpConnection>& conn) {
+  protoheader::ResponseHeader resp_header;
+  resp_header.set_code(code);
+  resp_header.set_msg(msg);
+
+  std::string header_str;
+  resp_header.SerializeToString(&header_str);
+
+  uint32_t header_size = header_str.size();
+  uint32_t total_size = 8 + header_size;
+
+  std::string packet;
+  packet.append((char*)&total_size, 4);
+  packet.append((char*)&header_size, 4);
+  packet.append(header_str);
+
+  conn->Send(packet);
+}
+
+void RpcProxy::HandleRequest(protoheader::RequestHeader header,
+                             std::string all_buf,
                              uint32_t old_header_size,
                              const std::shared_ptr<TcpConnection> & client_conn) {
+  // 始终在 client 的 loop 上执行（由 OnMessage 或 timer 回调调用）
+  EventLoop * client_loop = client_conn->GetLoop();
+
+  uint64_t context_id = client_conn->GetContextId();
+  auto ctx = context_id ? client_loop->GetContext(context_id) : nullptr;
+
+  // --- 重试处理（原地更新 context，不删重建） ---
+  if (ctx && ctx->provider_conn) {
+    auto * old_provider = ctx->provider_conn.get();
+
+    if (ctx->cnt >= 2) {
+      old_provider->GetLoop()->RunOneFunc([old_provider, context_id]() {
+        old_provider->RemoveCtxLoop(context_id);
+      });
+      client_loop->RemoveContext(context_id);
+      client_conn->SetContextId(0);
+      SendErrorResponse(6, "over retry times", client_conn);
+      return;
+    }
+
+    // 更新旧 provider 负载 + 清除映射
+    old_provider->GetLoop()->RunOneFunc([old_provider, context_id]() {
+      old_provider->GetLoadState()->EnLoad();
+      old_provider->GetLoadState()->AddLoad(kRpcTimeoutMs);
+      old_provider->GetLoadState()->DeLoad();
+      old_provider->RemoveCtxLoop(context_id);
+    });
+  }
+
+  // --- 找 provider ---
   std::string path = "/rpc/" + header.service() + "/" + header.method();
-  TcpConnection * provider_conn = FindProvider(path);
-  if(!provider_conn){
-    LOG_ERROR << "no provider for " << path;
+  auto provider_conn = FindProvider(path);
+  if (!provider_conn) {
+    if (context_id != 0) {
+      client_loop->RemoveContext(context_id);
+      client_conn->SetContextId(0);
+    }
+    SendErrorResponse(5, "no provider", client_conn);
     return;
   }
-  // load count + 1
-  provider_conn->GetLoadState()->EnLoad();
 
-  // ctx 初始化
+  // --- 创建 timer ---
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   long long now = ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
 
-  EventLoop * loop = provider_conn->GetLoop();
-  auto ctx = std::make_unique<EventLoop::Context>(client_conn.get(), provider_conn, now);
-  uint64_t context_id = loop->SetContext(std::move(ctx));
+  Timer * timer = client_loop->RunAfter(kRpcTimeoutMs / 1000.0,
+      [this, header, all_buf, old_header_size, client_conn]() mutable {
+        HandleRequest(std::move(header), std::move(all_buf), old_header_size, client_conn);
+      });
 
-  //添加引用时资源
-  provider_conn->AddContextId(context_id);
-  client_conn->SetClientRes(loop, context_id);
-  //注入ctx_id
+  // --- 创建/更新 context（重试时原地更新，避免删重建） ---
+  if (ctx && ctx->provider_conn) {
+    ctx->provider_conn = provider_conn;
+    ctx->when = now;
+    ctx->timer = timer;
+    ctx->cnt++;
+  }
+  else {
+    context_id = client_loop->AddContext(client_conn, provider_conn, now, timer);
+    client_conn->SetContextId(context_id);
+  }
+
+  // --- 准备报文 ---
   header.set_context_id(context_id);
-  //序列化后替换
   std::string new_header_str;
   header.SerializeToString(&new_header_str);
   all_buf.replace(8, old_header_size, new_header_str);
-  std::cout<< old_header_size <<" "<<new_header_str.size()<<std::endl;
-  provider_conn->Send(std::move(all_buf));
+
+  // --- 在 provider 的 loop 上执行：EnLoad + 注册映射 + 发送 ---
+  provider_conn->GetLoop()->RunOneFunc([provider_conn, context_id, client_loop,
+                                        all_buf = std::move(all_buf)]() {
+    provider_conn->GetLoadState()->EnLoad();
+    provider_conn->SetCtxLoop(context_id, client_loop);
+    provider_conn->Send(std::move(all_buf));
+  });
 }
 
 void RpcProxy::HandleResponse(protoheader::ResponseHeader & header,
                               std::string && all_buf,
                               const std::shared_ptr<TcpConnection> & provider_conn) {
-  EventLoop * loop = provider_conn->GetLoop();
-  auto * ctx = loop->GetContext(header.context_id());
-  if(!ctx){ // 说明client异常关闭，此ctx被释放了，不用管
-    LOG_ERROR << "no context for context_id: " << header.context_id();
+  uint64_t context_id = header.context_id();
+  EventLoop * client_loop = provider_conn->GetCtxLoop(context_id);
+  if (!client_loop) {
+    LOG_ERROR << "the provider's response overtime " << context_id; // 如果是超时， deload等操作在超时回调的时候有做处理
     return;
   }
-  // 更新load
+
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   long long now = ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
-  long long rt = now - ctx->when;
 
-  provider_conn->GetLoadState()->AddLoad(rt);
-  provider_conn->GetLoadState()->DeLoad();
-  //释放ctx 和 资源记录 
-  provider_conn->RemoveContextId(header.context_id());
+  // 切到 client 的 loop 检查 context 有效性
+  client_loop->RunOneFunc([this, context_id, client_loop, provider_conn, all_buf = std::move(all_buf), now]() {
+    auto ctx = client_loop->GetContext(context_id);
+    if (!ctx || ctx->provider_conn.get() != provider_conn.get()) {
+      LOG_ERROR << "the provider's response overtime " << context_id; // 如果是超时， deload等操作在超时回调的时候有做处理
+      return;
+    }
 
-  
-  auto caller = ctx->caller;
-  caller->Send(std::move(all_buf));  
-  
-  caller->SetClientRes(nullptr, 0);
-  loop -> RemoveContext(header.context_id());
+    long long rt = now - ctx->when;
+    auto client_conn = ctx->client_conn;
 
+    // 清理 client 侧的 context
+    client_loop->RemoveContext(context_id);
+    client_conn->SetContextId(0);
+
+    // 更新 provider 负载 + 清除映射（在 provider 的 loop 上）， 如果超时了，就由client端来更新负载了
+    provider_conn->GetLoop()->RunOneFunc([provider_conn, rt, context_id]() {
+      provider_conn->GetLoadState()->AddLoad(rt);
+      provider_conn->GetLoadState()->DeLoad();
+      provider_conn->RemoveCtxLoop(context_id);
+    });
+
+    // 转发响应给 client
+    client_conn->Send(all_buf);
+  });
 }

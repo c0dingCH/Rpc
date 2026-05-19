@@ -279,36 +279,22 @@ void TcpConnection::SetTimeStamp(TimeStamp timestamp){
 
 void TcpConnection::SetRole(Role role){
   role_ = role;
-  if(IsProvider()){
-    res_.emplace<ProviderRes>();
-    if(!load_state_)load_state_ = std::make_unique<RpcLoadState>();
-    else LOG_ERROR << "LoadState set before SetRole";
+  if(IsProvider() && !load_state_){
+    load_state_ = std::make_unique<RpcLoadState>();
   }
 }
 
-void TcpConnection::SetClientRes(EventLoop * loop, uint64_t context_id){
-  res_ = ClientRes{loop, context_id};
+void TcpConnection::SetCtxLoop(uint64_t id, EventLoop * loop){
+  provider_context_map_[id] = loop;
 }
 
-void TcpConnection::AddContextId(uint64_t context_id){
-  if(auto * pr = std::get_if<ProviderRes>(&res_)){
-    if(pr->context_ids.count(context_id)){
-      LOG_ERROR << " re_add reactor id : "<< context_id << " in conn";
-    }
-    else{
-      pr->context_ids.insert(context_id);
-    }
-  }
+EventLoop * TcpConnection::GetCtxLoop(uint64_t id){
+  auto it = provider_context_map_.find(id);
+  return it != provider_context_map_.end() ? it->second : nullptr;
 }
 
-void TcpConnection::RemoveContextId(uint64_t context_id){
-  if(auto * pr = std::get_if<ProviderRes>(&res_)){
-    auto it = pr->context_ids.find(context_id);
-    if(it == pr->context_ids.end()){
-      LOG_ERROR << " re_remove reactor id : "<< context_id << " in conn";
-    }
-    else{
-      pr->context_ids.erase(it);
-    }
-  }
+void TcpConnection::RemoveCtxLoop(uint64_t id){
+  auto it = provider_context_map_.find(id);
+  if(it != provider_context_map_.end()) provider_context_map_.erase(it);
 }
+

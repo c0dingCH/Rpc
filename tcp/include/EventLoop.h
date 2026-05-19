@@ -1,25 +1,26 @@
 #pragma once
 #include<functional>
 #include<mutex>
+#include<unordered_map>
 #include"Common.h"
 #include<memory>
-#include<map>
 
 class Poller;
 class Channel;
 class ThreadPool;
 class TimeStamp;
+class Timer;
 class TimerQueue;
 class TcpConnection;
 
 class EventLoop{
 public:
-  struct Context{
-    TcpConnection * caller;
-    TcpConnection * callee;
-    long long when;
-
-    Context(TcpConnection * _caller, TcpConnection * _callee, long long _when):caller(_caller), callee(_callee), when(_when){}
+  struct Context {
+    std::shared_ptr<TcpConnection> client_conn;
+    std::shared_ptr<TcpConnection> provider_conn;
+    Timer * timer{nullptr};
+    int cnt{0};
+    long long when{0};
   };
 
   EventLoop();
@@ -39,16 +40,16 @@ public:
   bool IsInThreadLoop();
   
 
-  void RunAt(TimeStamp timestamp, const std::function<void()> & cb);
-  void RunAfter(double wait_time, const std::function<void()> & cb);
-  void RunEvery(double interval , const std::function<void()> & cb);
+  Timer * RunAt(TimeStamp timestamp, const std::function<void()> & cb);
+  Timer * RunAfter(double wait_time, const std::function<void()> & cb);
+  Timer * RunEvery(double interval , const std::function<void()> & cb);
+  void CancelTimer(Timer * timer);
 
-    
-  uint64_t RoundId();
-  uint64_t SetContext(std::unique_ptr<Context> context);
-  Context * GetContext(uint64_t id);
+  uint64_t AddContext(std::shared_ptr<TcpConnection> client_conn,
+                      std::shared_ptr<TcpConnection> provider_conn,
+                      long long when, Timer * timer = nullptr);
   void RemoveContext(uint64_t id);
-  
+  Context* GetContext(uint64_t id);
 
 private:
   std::unique_ptr<Poller> poller_;
@@ -61,7 +62,7 @@ private:
   int wakeup_fd_;
   
   std::unique_ptr<TimerQueue> timer_queue_;
-  
-  std::map<uint64_t, std::unique_ptr<Context> > contexts_;
-  uint64_t context_id_{0};
+
+  std::unordered_map<uint64_t, std::unique_ptr<Context>> contexts_;
+  uint64_t glob_id_{0};
 };

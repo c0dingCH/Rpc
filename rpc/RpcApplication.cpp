@@ -10,14 +10,14 @@ using std::endl;
 
 RpcConfig RpcApplication::config_;
 
-void ShowConfigHelp(){
+static void ShowConfigHelp(){
   cout<< "config help:"<<endl<<endl;
   cout<<"one line limit char 512 (include '\\n')" << endl;
   cout<<"formate : key=value"<<endl;
   cout<<"row notes begin with '#' " << endl;
 }
 
-void ShowArgsHelp(){
+static void ShowArgsHelp(){
   cout<<"formage : command -i <configfile>" << endl;
 }
 

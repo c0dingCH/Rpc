@@ -81,11 +81,13 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
 
   protoheader::ResponseHeader r_header;
 
-  if (!response->ParseFromArray(recv_buf + 8, h_size)) {
+  if (!r_header.ParseFromArray(recv_buf + 8, h_size)) {
     close(serv_fd);
     LOG_ERROR << "parse response_header error";
     return;
   }
+
+  std::cout<< "code: "<< r_header.code() << std::endl << "msg: " << r_header.msg()<<std::endl;
 
   if (!response->ParseFromArray(recv_buf + 8 + h_size, tot_size - 8 - h_size)) {
     close(serv_fd);

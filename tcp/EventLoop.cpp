@@ -6,6 +6,7 @@
 #include"Timer.h"
 #include"TimeStamp.h"
 #include"Logging.h"
+#include"TcpConnection.h"
 
 #include<memory>
 #include<assert.h>
@@ -101,44 +102,48 @@ bool EventLoop::IsInThreadLoop(){
 }
 
 
-void EventLoop::RunAt(TimeStamp timestamp, const std::function<void()> & cb){
-  timer_queue_ -> AddTimer(timestamp, std::move(cb), 0.0);      
+void EventLoop::CancelTimer(Timer * timer){
+  timer_queue_ -> DeleteTimer(timer);
 }
 
-void EventLoop::RunAfter(double wait_time, const std::function<void()> & cb){
-  timer_queue_ -> AddTimer(TimeStamp::AddTime(TimeStamp::Now(), wait_time), std::move(cb), 0.0);
+Timer * EventLoop::RunAt(TimeStamp timestamp, const std::function<void()> & cb){
+  return timer_queue_ -> AddTimer(timestamp, std::move(cb), 0.0);      
 }
 
-void EventLoop::RunEvery(double interval , const std::function<void()> & cb){
-  timer_queue_ -> AddTimer(TimeStamp::Now(), std::move(cb), interval);
+Timer * EventLoop::RunAfter(double wait_time, const std::function<void()> & cb){
+  return timer_queue_ -> AddTimer(TimeStamp::AddTime(TimeStamp::Now(), wait_time), std::move(cb), 0.0);
 }
 
-uint64_t EventLoop::RoundId(){
-  while(contexts_.count(++context_id_) || context_id_ == 0);
-  return context_id_;
+Timer * EventLoop::RunEvery(double interval , const std::function<void()> & cb){
+  return timer_queue_ -> AddTimer(TimeStamp::Now(), std::move(cb), interval);
 }
 
-uint64_t EventLoop::SetContext(std::unique_ptr<Context> context){
-  auto context_id = RoundId();
-  contexts_[context_id] = std::move(context);
-  return context_id;
+uint64_t EventLoop::AddContext(std::shared_ptr<TcpConnection> client_conn,
+                                std::shared_ptr<TcpConnection> provider_conn,
+                                long long when, Timer * timer) {
+  while(contexts_.count(++glob_id_) || glob_id_ == 0); // 获取一个没有被维护的上下文
+  
+  auto ctx = std::make_unique<Context>();
+  ctx->client_conn = std::move(client_conn);
+  ctx->provider_conn = std::move(provider_conn);
+  ctx->when = when;
+  ctx->timer = timer;
+  contexts_[glob_id_] = std::move(ctx);
+  return glob_id_;
 }
 
-EventLoop::Context * EventLoop::GetContext(uint64_t context_id){
-  auto it = contexts_.find(context_id);
-  if(it == contexts_.end()){
-    LOG_ERROR << "no such reqeust_id : "<< context_id;
-    return nullptr;
-  }
-  return it->second.get();
-}
-
-void EventLoop::RemoveContext(uint64_t context_id){
-  auto it = contexts_.find(context_id);
-  if(it == contexts_.end()){
-    LOG_ERROR << "context id : " << context_id << " double remove";
-  }
-  else{
+void EventLoop::RemoveContext(uint64_t id) {
+  auto it = contexts_.find(id);
+  if(it != contexts_.end()){
+    if(it->second->timer) CancelTimer(it->second->timer);
     contexts_.erase(it);
   }
 }
+
+EventLoop::Context* EventLoop::GetContext(uint64_t id) {
+  auto it = contexts_.find(id);
+  if(it != contexts_.end()) return it->second.get();
+  return nullptr;
+}
+
+

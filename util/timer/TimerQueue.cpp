@@ -58,13 +58,32 @@ void TimerQueue::HandleRead(){
   ResetTimers();
 }
 
-void TimerQueue::AddTimer(TimeStamp timestamp, const std::function<void()> & cb, double interval){
+Timer * TimerQueue::AddTimer(TimeStamp timestamp, const std::function<void()> & cb, double interval){
   Timer * timer = new Timer(timestamp,cb,interval);
   if(Insert(timer)){
     ResetTimerFd(timer);
   }
+  return timer;
 }
 
+
+void TimerQueue::DeleteTimer(Timer * timer) {
+  timer->Cancel();
+
+  auto it = timers_.find(Entry(timer->GetExpiration(), timer));
+  if (it != timers_.end()) {
+    timers_.erase(it);
+    delete timer;
+
+    if (timers_.empty()) { // 解除timer_fd的监听
+      itimerspec disarm{};
+      timerfd_settime(timer_fd_, 0, &disarm, nullptr);
+    } 
+    else {
+      ResetTimerFd(timers_.begin()->second);
+    }
+  }
+}
 
 bool TimerQueue::Insert(Timer * timer){
   bool instantly = false;
@@ -78,10 +97,13 @@ bool TimerQueue::Insert(Timer * timer){
 void TimerQueue::ResetTimers(){
   for(auto &entry : active_timers_){
     auto timer = entry.second;
-    if(timer -> GetRepeat()){
-      timer -> ReStart(TimeStamp::Now());
+    if(timer->IsCancelled()){
+      delete timer;
+    }
+    else if(timer->GetRepeat()){
+      timer->ReStart(TimeStamp::Now());
       Insert(timer);
-    } 
+    }
     else{
       delete timer;
     }
@@ -95,7 +117,7 @@ void TimerQueue::ResetTimers(){
 
 void TimerQueue::ResetTimerFd(Timer * timer){
   itimerspec new_{};
-  itimerspec old_{};
+  //itimerspec old_{};
 
 
   int64_t micro_second_dif = timer->GetExpiration().GetMicroSeconds() - TimeStamp::Now().GetMicroSeconds();
@@ -111,7 +133,8 @@ void TimerQueue::ResetTimerFd(Timer * timer){
     micro_second_dif % kSecond2MicroSecond * 1000    
   );
   
-  assert(::timerfd_settime(timer_fd_, 0, &new_, &old_) != -1);
+  //assert(::timerfd_settime(timer_fd_, 0, &new_, &old_) != -1);
+  assert(::timerfd_settime(timer_fd_, 0, &new_, nullptr) != -1);
 }
 
 

@@ -1,19 +1,19 @@
 #pragma once
 #include<functional>
+#include<unordered_map>
 #include"Common.h"
 #include"TimeStamp.h"
 #include"Logging.h"
 #include"RpcLoadState.h"
 
 #include<memory>
-#include<variant>
-#include<unordered_set>
 
 class EventLoop;
 class Socket;
 class Channel;
 class Buffer;
 class User;
+class Timer;
 
 class TcpConnection : public std::enable_shared_from_this<TcpConnection>{
 public:
@@ -26,15 +26,6 @@ public:
   enum Role{
     kClient,
     kProvider
-  };
-
-  struct ClientRes{
-    EventLoop * loop;
-    uint64_t context_id;
-  };
-
-  struct ProviderRes{
-    std::unordered_set<uint64_t> context_ids;
   };
 
   TcpConnection(EventLoop * loop, int connfd, int connid);
@@ -75,12 +66,16 @@ public:
   void SetRole(Role role);
   bool IsProvider(){ return role_ == Role::kProvider; }
   bool IsClient() { return role_ == Role::kClient; }
-  std::variant<ClientRes,ProviderRes> GetRes(){ return res_; }
-  void SetClientRes(EventLoop * loop, uint64_t context_id);
-  void AddContextId(uint64_t context_id);
-  void RemoveContextId(uint64_t context_id); 
 
   RpcLoadState * GetLoadState(){ return load_state_.get(); }
+
+  uint64_t GetContextId() const { return context_id_; }
+  void SetContextId(uint64_t id) { context_id_ = id; }
+
+  // provider conn 侧映射 context_id → client_loop
+  void SetCtxLoop(uint64_t id, EventLoop * loop);
+  EventLoop * GetCtxLoop(uint64_t id);
+  void RemoveCtxLoop(uint64_t id);
 
 private:
   EventLoop * loop_{nullptr};
@@ -102,6 +97,8 @@ private:
   bool fault_error_{false};
 
   Role role_{kClient};
-  std::variant<ClientRes,ProviderRes> res_;
   std::unique_ptr<RpcLoadState> load_state_;
+
+  uint64_t context_id_{0}; // client
+  std::unordered_map<uint64_t, EventLoop *> provider_context_map_; // provider
 };

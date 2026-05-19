@@ -22,14 +22,20 @@ public:
   void Run();
 
   void UpdateService(const std::string& path, bool initing);
+  void OnZkChildEvent(const std::string & path,  int depth);
 
-  TcpConnection * FindProvider(const std::string & path);  
+  std::shared_ptr<TcpConnection> FindProvider(const std::string & path);
   void OnConnect(const std::shared_ptr<TcpConnection>& conn); 
   void OnMessage(const std::shared_ptr<TcpConnection>& conn);
 
 private:
-  void HandleRequest(protoheader::RequestHeader & header,
-                     std::string && all_buf,
+  void SendErrorResponse(int code, const std::string& msg,
+                         const std::shared_ptr<TcpConnection>& conn);
+
+  static constexpr long long kRpcTimeoutMs = 200; // 200ms
+
+  void HandleRequest(protoheader::RequestHeader header,
+                     std::string all_buf,
                      uint32_t old_header_size,
                      const std::shared_ptr<TcpConnection> & client_conn);
 

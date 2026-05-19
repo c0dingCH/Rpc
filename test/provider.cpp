@@ -1,5 +1,6 @@
 #include "RpcProvider.h"
 #include "User.pb.h"
+#include "RpcApplication.h"
 
 #include <iostream>
 
@@ -19,9 +20,10 @@ public:
 };
 
 
-int main(){
-  RpcProvider pr;
+int main(int argc, char **argv){
+  RpcApplication::Init(argc,argv);
 
+  RpcProvider pr;
   pr.NotifyService(new UserService());
   
   pr.Run();

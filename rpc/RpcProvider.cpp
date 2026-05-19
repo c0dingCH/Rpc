@@ -3,6 +3,8 @@
 #include <google/protobuf/descriptor.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <chrono>//
+#include <thread>//
 
 #include "RpcProvider.h"
 #include "EventLoop.h"
@@ -15,6 +17,9 @@
 #include "Header.pb.h"
 #include "ProviderController.h"
 #include "RpcClosure.h"
+#include "RpcApplication.h"
+
+int ccc = 0;
 
 void RpcProvider::NotifyService(google::protobuf::Service *serv) {
   ServiceInfo serv_info;
@@ -40,9 +45,14 @@ void RpcProvider::NotifyService(google::protobuf::Service *serv) {
 void RpcProvider::Run() {
 
   //静态ip端口
-  std::string ip = "127.0.0.11";
-  short port = 8888;
-  std::string hp = ip + ":" + std::to_string(port);
+  std::string hp = RpcApplication::instance().config().Load("hp");
+  puts(hp.c_str());
+  int it = hp.find(':'); 
+  if(it == -1){
+    LOG_FATAL << "illegal addr";
+  }
+  std::string ip = hp.substr(0,it);
+  short port = atoi(hp.substr(it + 1).c_str());
 
   TcpServer server(ip.c_str(), port, &main_reactor_);
   server.OnConnect(std::bind(&RpcProvider::OnConnect, this, std::placeholders::_1));
@@ -196,8 +206,11 @@ void RpcProvider::SendResponse(const std::shared_ptr<TcpConnection> &conn,
   msg.append(header_str);
   msg.append(body_str);
 
-  std::cout<<total_size <<" "<<header_size<<" "<<header_str.size() << " "<<body_str.size()<<std::endl;
+  //std::cout<<total_size <<" "<<header_size<<" "<<header_str.size() << " "<<body_str.size()<<std::endl;
+  if(++ccc >= 4) std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  else std::this_thread::sleep_for(std::chrono::milliseconds(100));
   conn->Send(msg);
+  puts("react");
 }
 
 
