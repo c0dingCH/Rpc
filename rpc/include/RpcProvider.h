@@ -32,4 +32,7 @@ private:
   void SendResponse(const std::shared_ptr<TcpConnection> &conn,
                           google::protobuf::RpcController * controller,
                           google::protobuf::Message * response);
+  
+  void SendErrorResponse(int code, const std::string& msg, uint64_t context_id,
+                          const std::shared_ptr<TcpConnection>& conn);    
 };

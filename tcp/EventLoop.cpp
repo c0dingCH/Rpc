@@ -118,18 +118,19 @@ Timer * EventLoop::RunEvery(double interval , const std::function<void()> & cb){
   return timer_queue_ -> AddTimer(TimeStamp::Now(), std::move(cb), interval);
 }
 
-uint64_t EventLoop::AddContext(std::shared_ptr<TcpConnection> client_conn,
+uint64_t EventLoop::AddContext(uint64_t id,
+                                std::shared_ptr<TcpConnection> client_conn,
                                 std::shared_ptr<TcpConnection> provider_conn,
                                 long long when, Timer * timer) {
-  while(contexts_.count(++glob_id_) || glob_id_ == 0); // 获取一个没有被维护的上下文
+  assert(id != 0);
   
   auto ctx = std::make_unique<Context>();
   ctx->client_conn = std::move(client_conn);
   ctx->provider_conn = std::move(provider_conn);
   ctx->when = when;
   ctx->timer = timer;
-  contexts_[glob_id_] = std::move(ctx);
-  return glob_id_;
+  contexts_[id] = std::move(ctx);
+  return id;
 }
 
 void EventLoop::RemoveContext(uint64_t id) {

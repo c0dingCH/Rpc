@@ -22,6 +22,7 @@ public:
     int cnt{0};
     long long when{0};
     long long timeout_ms{200};
+    bool is_probe{false};
   };
 
   EventLoop();
@@ -46,7 +47,8 @@ public:
   Timer * RunEvery(double interval , const std::function<void()> & cb);
   void CancelTimer(Timer * timer);
 
-  uint64_t AddContext(std::shared_ptr<TcpConnection> client_conn,
+  uint64_t AddContext(uint64_t id,
+                      std::shared_ptr<TcpConnection> client_conn,
                       std::shared_ptr<TcpConnection> provider_conn,
                       long long when, Timer * timer = nullptr);
   void RemoveContext(uint64_t id);

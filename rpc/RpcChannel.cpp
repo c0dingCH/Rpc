@@ -87,7 +87,8 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
     return;
   }
 
-  std::cout<< "code: "<< r_header.code() << std::endl << "msg: " << r_header.msg()<<std::endl;
+ std::cout<< "code: "<< r_header.code() << std::endl << "msg: " << r_header.msg()<<std::endl;
+  //std::cout<< r_header.code() << std::endl;
 
   if (!response->ParseFromArray(recv_buf + 8 + h_size, tot_size - 8 - h_size)) {
     close(serv_fd);

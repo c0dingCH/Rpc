@@ -4,7 +4,8 @@
 #include"Common.h"
 #include"TimeStamp.h"
 #include"Logging.h"
-#include"RpcLoadState.h"
+#include"RpcLoadScore.h"
+#include"RpcCircuitBreaker.h"
 
 #include<memory>
 
@@ -67,7 +68,8 @@ public:
   bool IsProvider(){ return role_ == Role::kProvider; }
   bool IsClient() { return role_ == Role::kClient; }
 
-  RpcLoadState * GetLoadState(){ return load_state_.get(); }
+  RpcLoadScore* GetLoadScore() { return load_score_.get(); }
+  RpcCircuitBreaker* GetCircuitBreaker() { return circuit_breaker_.get(); }
 
   uint64_t GetContextId() const { return context_id_; }
   void SetContextId(uint64_t id) { context_id_ = id; }
@@ -97,7 +99,8 @@ private:
   bool fault_error_{false};
 
   Role role_{kClient};
-  std::unique_ptr<RpcLoadState> load_state_;
+  std::unique_ptr<RpcLoadScore> load_score_;
+  std::unique_ptr<RpcCircuitBreaker> circuit_breaker_;
 
   uint64_t context_id_{0}; // client
   std::unordered_map<uint64_t, EventLoop *> provider_context_map_; // provider

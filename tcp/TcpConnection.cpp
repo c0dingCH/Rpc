@@ -5,7 +5,8 @@
 #include"Common.h"
 #include"TimeStamp.h"
 #include"Logging.h"
-#include"RpcLoadState.h"
+#include"RpcLoadScore.h"
+#include"RpcCircuitBreaker.h"
 
 #include<functional>
 #include<unistd.h>
@@ -31,11 +32,9 @@ TcpConnection::TcpConnection(EventLoop * loop, int connfd ,int connid):loop_(loo
   read_buffer_ = std::make_unique<Buffer>();
   send_buffer_ = std::make_unique<Buffer>();
   state_ = State::kConnected;
-  load_state_ = std::make_unique<RpcLoadState>(this);
 }
 
 TcpConnection::~TcpConnection(){
-  puts("xi gou le");
   if(connfd_ != -1){
     close(connfd_);
     connfd_ = -1;
@@ -103,7 +102,7 @@ void TcpConnection::HandleClose(){
   if(state_ != State::kClosed){
     state_ = State::kClosed;
     
-    LOG_INFO <<"client fd: "<<connfd_<<" kClosed ";
+    LOG_INFO << (IsClient() ? "client" : "provider") << " fd: " << connfd_ << " kClosed ";
     
     channel_ -> DisableAll();
 
@@ -280,6 +279,10 @@ void TcpConnection::SetTimeStamp(TimeStamp timestamp){
 
 void TcpConnection::SetRole(Role role){
   role_ = role;
+  if (role == kProvider) {
+    if (!load_score_) load_score_ = std::make_unique<RpcLoadScore>();
+    if (!circuit_breaker_) circuit_breaker_ = std::make_unique<RpcCircuitBreaker>(this);
+  }
 }
 
 void TcpConnection::SetCtxLoop(uint64_t id, EventLoop * loop){

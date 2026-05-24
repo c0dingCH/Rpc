@@ -6,7 +6,8 @@
 #include "Logging.h"
 #include "Buffer.h"
 #include "Header.pb.h"
-#include "RpcLoadState.h"
+#include "RpcLoadScore.h"
+#include "RpcCircuitBreaker.h"
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -50,6 +51,7 @@ void RpcProxy::Run() {
   server_ -> Start();
 
   std::string root = "/rpc";
+  zk_client_->Create(root.c_str(), nullptr, 0, 0); // 确保根节点存在
   auto services = zk_client_->GetChildrens(root.c_str(), true);
   for (auto & service : services) {
     std::string serv_path = root + "/" + service;
@@ -65,11 +67,9 @@ void RpcProxy::Run() {
 
 
 void RpcProxy::UpdateService(const std::string & path, bool initing) { // Run的逻辑就是，对于UpdateService的path就是method
-  std::cout << path<< " "<<"update" << std::endl;
   auto addrs = zk_client_->GetChildrens(path.c_str(), true); // 监听第 3 层的children
   if(!addrs.size())return;
 
-  //node_name == ip:port
   {
     std::unique_lock lock(mtx_path_);
     path_node_[path] = addrs;
@@ -144,7 +144,8 @@ void RpcProxy::OnZkChildEvent(const std::string & path, int depth) {
 }
 
 
-std::shared_ptr<TcpConnection> RpcProxy::FindProvider(const std::string & path) {
+std::shared_ptr<TcpConnection> RpcProxy::FindProvider(const std::string & path, bool & is_probe) {
+  is_probe = false;
   std::shared_lock lock_path(mtx_path_);
   auto it = path_node_.find(path);
   if (it == path_node_.end() || it->second.empty()) return nullptr;
@@ -154,25 +155,41 @@ std::shared_ptr<TcpConnection> RpcProxy::FindProvider(const std::string & path) 
   std::shared_lock lock_addr(mtx_addr_);
   std::shared_ptr<TcpConnection> best = nullptr;
   double best_load = 0;
+  bool best_probe = false;
+  std::vector<std::shared_ptr<TcpConnection>> half_open_marked;
   for (auto & node_name : nodes) {
     auto conn_it = addr_conn_.find(node_name);
     if (conn_it != addr_conn_.end()) {
-      auto * state = conn_it->second->GetLoadState();
-      if (!state->IsUp()) continue;
-      double load = state->Load();
-      if (!best || load < best_load) {
+      auto * cb = conn_it->second->GetCircuitBreaker();
+      bool probe = false;
+      if (!cb->TryAcquire(probe)) continue;
+
+      if (probe) half_open_marked.push_back(conn_it->second);
+
+      auto * score = conn_it->second->GetLoadScore();
+      double load = score->Load();
+      if (!best || load > best_load) {  // 这里load计算变成 weigth / (ewma_cnt * ewma_rt) 了，越大说明越空闲
         best = conn_it->second;
         best_load = load;
+        best_probe = probe;
       }
     }
   }
+
+ 
+  is_probe = best_probe;
+  for (auto & conn : half_open_marked)
+    if (conn.get() != best.get()) conn->GetCircuitBreaker()->ResetProbeSent();
+  
+    
+  
   return best;
 }
 
 void RpcProxy::OnConnect(const std::shared_ptr<TcpConnection> & conn) {
   if (conn->GetState() == TcpConnection::State::kConnected) {
     if (!conn->IsProvider()) conn->SetRole(TcpConnection::Role::kClient);
-    LOG_INFO << "proxy client: " << conn->GetAddr();
+    LOG_INFO << "proxy or client: " << conn->GetAddr();
   }
   if (conn->GetState() == TcpConnection::State::kClosed) {
     if (conn->IsClient()) {
@@ -181,13 +198,17 @@ void RpcProxy::OnConnect(const std::shared_ptr<TcpConnection> & conn) {
         EventLoop * client_loop = conn->GetLoop();
         auto ctx = client_loop->GetContext(context_id); 
         if (ctx && ctx->provider_conn) {
+          bool is_probe = ctx->is_probe;
           auto * provider_conn = ctx->provider_conn.get();
-          provider_conn->GetLoop()->RunOneFunc([provider_conn, context_id]() {
+          provider_conn->GetLoop()->RunOneFunc([provider_conn, context_id, is_probe]() {
+            if (is_probe) {
+              auto * cb = provider_conn->GetCircuitBreaker();
+              cb->ProbeFailed(); // 如果response了，就不会执行到这里，能执行到这里说明一定是异常退出
+            }
             provider_conn->RemoveCtxLoop(context_id);
           });
         }
         client_loop->RemoveContext(context_id);// context的维护和clent的reactor是同一个，是安全的
-        conn->SetContextId(0);
       }
     }
     else if (conn->IsProvider()) {
@@ -227,14 +248,11 @@ void RpcProxy::OnMessage(const std::shared_ptr<TcpConnection> & conn) {
         SendErrorResponse(4, "parse RequestHeader error", conn);
         return;
       }
-      HandleRequest(std::move(header), std::move(all_buf), header_size, conn);
+      std::string args = all_buf.substr(8 + header_size);
+      HandleRequest(std::move(header), std::move(args), conn);
     }
     else{
-      // 探测响应: total_size == 8 && header_size == 0
-      if (total_size == 8 && header_size == 0) {
-        conn->GetLoadState()->HandleProbeResponse();
-        continue;
-      }
+
       protoheader::ResponseHeader header;
       if(!header.ParseFromString(all_buf.substr(8, header_size))){
         LOG_ERROR << "parse ResponseHeader error";
@@ -267,10 +285,11 @@ void RpcProxy::SendErrorResponse(int code, const std::string& msg,
 }
 
 void RpcProxy::HandleRequest(protoheader::RequestHeader header,
-                             std::string all_buf,
-                             uint32_t old_header_size,
+                             std::string args,
                              const std::shared_ptr<TcpConnection> & client_conn) {
-  // 始终在 client 的 loop 上执行（由 OnMessage 或 timer 回调调用）
+
+  
+// 始终在 client 的 loop 上执行（由 OnMessage 或 timer 回调调用）
   EventLoop * client_loop = client_conn->GetLoop();
 
   uint64_t context_id = client_conn->GetContextId();
@@ -279,11 +298,23 @@ void RpcProxy::HandleRequest(protoheader::RequestHeader header,
   // --- 重试处理（原地更新 context，不删重建） ---
   if (ctx && ctx->provider_conn) {
     auto * old_provider = ctx->provider_conn.get();
+    
+    // 更新旧 provider 负载 + 清除映射（在 provider 的 loop 上)
+    old_provider->GetLoop()->RunOneFunc([old_provider, context_id, probe = ctx->is_probe]() {
+      auto * score = old_provider->GetLoadScore();
+      auto * cb = old_provider->GetCircuitBreaker();
+      score->DeLoad();
+      
+      if (probe) cb->ProbeFailed();
+      else if(cb->IsUp()){
+        cb->RecordTimeout();
+        score->Timeout();
+      }
+      
+      old_provider->RemoveCtxLoop(context_id);
+    });
 
     if (ctx->cnt >= 2) {
-      old_provider->GetLoop()->RunOneFunc([old_provider, context_id]() {
-        old_provider->RemoveCtxLoop(context_id);
-      });
       client_loop->RemoveContext(context_id);
       client_conn->SetContextId(0);
       SendErrorResponse(6, "over retry times", client_conn);
@@ -297,19 +328,12 @@ void RpcProxy::HandleRequest(protoheader::RequestHeader header,
       if (ctx->timeout_ms > 5000) ctx->timeout_ms = 5000;
     }
 
-    // 更新旧 provider 负载 + 清除映射（在 provider 的 loop 上)
-    old_provider->GetLoop()->RunOneFunc([old_provider, context_id]() {
-      auto * state = old_provider->GetLoadState();
-      state->EnLoad();
-      state->AddLoad(kRpcTimeoutMs, true);
-      state->DeLoad();
-      old_provider->RemoveCtxLoop(context_id);
-    });
   }
 
   // --- 找 provider ---
   std::string path = "/rpc/" + header.service() + "/" + header.method();
-  auto provider_conn = FindProvider(path);
+  bool is_probe = false;
+  auto provider_conn = FindProvider(path, is_probe);
   if (!provider_conn) {
     if (context_id != 0) {
       client_loop->RemoveContext(context_id);
@@ -326,8 +350,8 @@ void RpcProxy::HandleRequest(protoheader::RequestHeader header,
 
   long long cur_timeout_ms = ctx ? ctx->timeout_ms : kRpcTimeoutMs;
   Timer * timer = client_loop->RunAfter(cur_timeout_ms / 1000.0,
-      [this, header, all_buf, old_header_size, client_conn]() mutable {
-        HandleRequest(std::move(header), std::move(all_buf), old_header_size, client_conn);
+      [this, header, args, client_conn]() mutable {
+        HandleRequest(std::move(header), std::move(args), client_conn);
       });
 
   // --- 创建/更新 context（重试时原地更新，避免删重建） ---
@@ -338,22 +362,34 @@ void RpcProxy::HandleRequest(protoheader::RequestHeader header,
     ctx->cnt++;
   }
   else {
-    context_id = client_loop->AddContext(client_conn, provider_conn, now, timer);
+    context_id = NextContextId();
+    client_loop->AddContext(context_id, client_conn, provider_conn, now, timer);
     client_conn->SetContextId(context_id);
   }
 
-  // --- 准备报文 ---
+  ctx = client_loop->GetContext(context_id);
+  if (ctx && is_probe) ctx->is_probe = true;
+
+  // --- 构造新报文（复用 args） ---
   header.set_context_id(context_id);
   std::string new_header_str;
   header.SerializeToString(&new_header_str);
-  all_buf.replace(8, old_header_size, new_header_str);
+
+  uint32_t new_header_size = new_header_str.size();
+  uint32_t new_total_size = 8 + new_header_size + args.size();
+
+  std::string new_buf;
+  new_buf.append((char*)&new_total_size, 4);
+  new_buf.append((char*)&new_header_size, 4);
+  new_buf.append(new_header_str);
+  new_buf.append(args);
 
   // --- 在 provider 的 loop 上执行：EnLoad + 注册映射 + 发送 ---
   provider_conn->GetLoop()->RunOneFunc([provider_conn, context_id, client_loop,
-                                        all_buf = std::move(all_buf)]() {
-    provider_conn->GetLoadState()->EnLoad();
+                                        new_buf = std::move(new_buf)]() {
+    provider_conn->GetLoadScore()->EnLoad();
     provider_conn->SetCtxLoop(context_id, client_loop);
-    provider_conn->Send(std::move(all_buf));
+    provider_conn->Send(new_buf);
   });
 }
 
@@ -387,11 +423,17 @@ void RpcProxy::HandleResponse(protoheader::ResponseHeader & header,
     client_conn->SetContextId(0);
 
     // 更新 provider 负载 + 清除映射（在 provider 的 loop 上）， 如果超时了，就由client端来更新负载了
-      provider_conn->GetLoop()->RunOneFunc([provider_conn, rt, context_id]() {
-        provider_conn->GetLoadState()->AddLoad(rt, false);
-        provider_conn->GetLoadState()->DeLoad();
-        provider_conn->RemoveCtxLoop(context_id);
-      });
+    provider_conn->GetLoop()->RunOneFunc([provider_conn, rt, context_id, probe = ctx->is_probe]() {
+      auto * score = provider_conn->GetLoadScore();
+      auto * cb = provider_conn->GetCircuitBreaker();
+      if (probe) cb->ProbeSucceeded();
+      else cb->RecordSuccess();
+      
+      score->DeLoad();
+      score->AddLoad(rt);
+     
+      provider_conn->RemoveCtxLoop(context_id);
+    });
 
     // 转发响应给 client
     client_conn->Send(all_buf);

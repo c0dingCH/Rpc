@@ -24,19 +24,27 @@ public:
   void UpdateService(const std::string& path, bool initing);
   void OnZkChildEvent(const std::string & path,  int depth);
 
-  std::shared_ptr<TcpConnection> FindProvider(const std::string & path);
+  std::shared_ptr<TcpConnection> FindProvider(const std::string & path, bool & is_probe);
   void OnConnect(const std::shared_ptr<TcpConnection>& conn); 
   void OnMessage(const std::shared_ptr<TcpConnection>& conn);
 
 private:
+  uint64_t NextContextId() {
+    uint64_t id;
+    do {
+      id = ctx_id_gen_.fetch_add(1, std::memory_order_relaxed);
+    } while (id == 0);
+    return id;
+  }
+
   void SendErrorResponse(int code, const std::string& msg,
                          const std::shared_ptr<TcpConnection>& conn);
 
   static constexpr long long kRpcTimeoutMs = 200; // 200ms
+  std::atomic<uint64_t> ctx_id_gen_{1};
 
   void HandleRequest(protoheader::RequestHeader header,
-                     std::string all_buf,
-                     uint32_t old_header_size,
+                     std::string args,
                      const std::shared_ptr<TcpConnection> & client_conn);
 
   void HandleResponse(protoheader::ResponseHeader & header,

@@ -3,6 +3,7 @@
 #include "RpcApplication.h"
 
 #include <iostream>
+#include <memory>
 
 class UserService : public test::UserService{
 public:
@@ -22,9 +23,10 @@ public:
 
 int main(int argc, char **argv){
   RpcApplication::Init(argc,argv);
+  auto user_service = std::make_unique<UserService>();
 
   RpcProvider pr;
-  pr.NotifyService(new UserService());
+  pr.NotifyService(user_service.get());
   
   pr.Run();
 }

@@ -13,7 +13,7 @@ int main(){
 
   stub.Login(nullptr,&request, &response, nullptr);
 
-  std::cout<< response.success()<<std::endl;  
+  //std::cout<< response.success()<<std::endl;  
 
 }
 

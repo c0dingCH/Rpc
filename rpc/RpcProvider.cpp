@@ -19,8 +19,6 @@
 #include "RpcClosure.h"
 #include "RpcApplication.h"
 
-int ccc = 0;
-
 void RpcProvider::NotifyService(google::protobuf::Service *serv) {
   ServiceInfo serv_info;
   serv_info.serv = serv;
@@ -43,10 +41,8 @@ void RpcProvider::NotifyService(google::protobuf::Service *serv) {
 }
 
 void RpcProvider::Run() {
-
   //静态ip端口
   std::string hp = RpcApplication::instance().config().Load("hp");
-  puts(hp.c_str());
   int it = hp.find(':'); 
   if(it == -1){
     LOG_FATAL << "illegal addr";
@@ -86,7 +82,26 @@ void RpcProvider::Run() {
   main_reactor_.Loop();
 }
 
+void RpcProvider::SendErrorResponse(int code, const std::string& msg, uint64_t context_id,
+                                  const std::shared_ptr<TcpConnection>& conn) {
+  protoheader::ResponseHeader resp_header;
+  resp_header.set_code(code);
+  resp_header.set_msg(msg);
+  resp_header.set_context_id(context_id);
 
+  std::string header_str;
+  resp_header.SerializeToString(&header_str);
+
+  uint32_t header_size = header_str.size();
+  uint32_t total_size = 8 + header_size;
+
+  std::string packet;
+  packet.append((char*)&total_size, 4);
+  packet.append((char*)&header_size, 4);
+  packet.append(header_str);
+
+  conn->Send(packet);
+}
 
 void RpcProvider::OnConnect(const std::shared_ptr<TcpConnection> &conn) {
   if(conn->GetState() != TcpConnection::State::kConnected) return;  
@@ -101,32 +116,25 @@ void RpcProvider::OnConnect(const std::shared_ptr<TcpConnection> &conn) {
 
 }
 
-
-// 包格式 :   4B(tatol_size except the 4B) + 4B(header_size) +  header_size + header.args_size(data) 
 void RpcProvider::OnMessage(const std::shared_ptr<TcpConnection> &conn) {
   if(conn->GetState() != TcpConnection::State::kConnected) return;
 
   Buffer * buf = conn->GetReadBuffer();
-
   while(1){
     if(buf->readablebytes() < 4) return;
+    
     std::string head_buffer = buf -> PeekAsString(4);
 
     // 包的总长度
     uint32_t total_size;
     head_buffer.copy((char *)&total_size, 4, 0);
-    if(buf->readablebytes() < total_size)return;
+    if(buf->readablebytes() < total_size) return;
+    
 
     //header的长度
     std::string all_buf = buf -> RetrieveAsString(total_size);
     uint32_t header_size;
     all_buf.copy((char *)&header_size, 4, 4);
-
-    // 探测包：total_size == 8 && header_size == 0，原样回复
-    if (total_size == 8 && header_size == 0) {
-      conn->Send(std::move(all_buf));
-      continue;
-    }
 
     //header解析
     protoheader::RequestHeader rpc_header;
@@ -139,6 +147,7 @@ void RpcProvider::OnMessage(const std::shared_ptr<TcpConnection> &conn) {
       method_name = rpc_header.method();
       request_id = rpc_header.request_id();
       context_id = rpc_header.context_id();
+
     }
     else{
       LOG_ERROR << "rpc_header_str: " << all_buf.substr(8,header_size) << " parse error! ";
@@ -148,12 +157,14 @@ void RpcProvider::OnMessage(const std::shared_ptr<TcpConnection> &conn) {
     auto it_servs = servs_.find(serv_name);
     if(it_servs == servs_.end()){
       LOG_ERROR << "No such service: " << serv_name;
+      SendErrorResponse(4, "No such service: " + serv_name, context_id, conn);
       return;
     }
 
     auto it_method = it_servs -> second.methods.find(method_name);
     if(it_method == it_servs -> second.methods.end()){
       LOG_ERROR << "No such method: " << method_name <<" from service: " << serv_name;
+      SendErrorResponse(4, "No such method: " + method_name + " from service: " + serv_name, context_id, conn);
       return;
     }
 
@@ -163,6 +174,7 @@ void RpcProvider::OnMessage(const std::shared_ptr<TcpConnection> &conn) {
     auto request = std::shared_ptr<google::protobuf::Message>(serv->GetRequestPrototype(method).New());
     if(!request -> ParseFromString(all_buf.substr(8 + header_size))){
       LOG_ERROR << "request parse error, content: " << all_buf.substr(8 + header_size);
+      SendErrorResponse(5, "Request parse error", context_id, conn);
       return;
     }
 
@@ -196,10 +208,12 @@ void RpcProvider::SendResponse(const std::shared_ptr<TcpConnection> &conn,
   std::string header_str, body_str;
   if (!resp_header.SerializeToString(&header_str)) {
     LOG_ERROR << "serialize ResponseHeader error";
+    SendErrorResponse(5, "Failed to serialize response header", pc->context_id(), conn);
     return;
   }
   if (!response->SerializeToString(&body_str)) {
     LOG_ERROR << "serialize response body error";
+    SendErrorResponse(5, "Failed to serialize response body", pc->context_id(), conn);
     return;
   }
 
@@ -213,10 +227,10 @@ void RpcProvider::SendResponse(const std::shared_ptr<TcpConnection> &conn,
   msg.append(body_str);
 
   //std::cout<<total_size <<" "<<header_size<<" "<<header_str.size() << " "<<body_str.size()<<std::endl;
-  if(++ccc >= 4) std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  else std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  puts("1");
+  std::srand(static_cast<unsigned>(std::time(nullptr))); // 初始化随机种子
+  std::this_thread::sleep_for(std::chrono::milliseconds(std::rand() % 50));
   conn->Send(msg);
-  puts("react");
 }
 
 
